@@ -14,9 +14,8 @@ contract Destroyable is Pausable {
 
     /**
      * @dev Destroy contract and transfer ether to address _targetAddress.
-     * @param _targetAddress Address ether should be transferred to.
      */
-    function destroy(address _targetAddress) public onlyOwner onlyPausedSince(TIMEOUT_DESTROY) {
-        selfdestruct(_targetAddress);
+    function destroy() public onlyOwner onlyPausedSince(TIMEOUT_DESTROY) {
+        selfdestruct(owner);
     }
 }
