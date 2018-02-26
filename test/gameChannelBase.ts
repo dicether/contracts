@@ -54,7 +54,6 @@ contract('GameChannelBase', accounts => {
 
     beforeEach(async () => {
         await blockchainLifecycle.takeSnapshotAsync();
-        await gameChannel.addHouseStake({from: owner, value: houseStake});
     });
 
     afterEach(async () => {

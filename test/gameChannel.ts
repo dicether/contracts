@@ -13,6 +13,7 @@ const expect = chai.expect;
 
 const withData = leche.withData;
 
+const HOUSE_STAKE = new BigNumber('100e18');
 const MinValue = new BigNumber('1e17');
 const MaxValue = new BigNumber('1e18');
 const hash = "0x0000000000000000000000000000000000000000000000000000000000000001"; // dummy hash
@@ -40,15 +41,10 @@ contract('GameChannel', accounts => {
         await blockchainLifecycle.revertSnapShotAsync();
     });
 
-    describe('No Balance check', () => {
-        it("Should fail if house stake too low", async () => {
-            await expect(gameChannel.createGame(hash, {from: player, value: MinValue})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-    });
-
     describe('createGame', () => {
-        beforeEach(async () => {
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
+        it("Should fail if house stake too low", async () => {
+            await gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner});
+            await expect(gameChannel.createGame(hash, {from: player, value: MinValue})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if value too low", async () => {
@@ -95,7 +91,6 @@ contract('GameChannel', accounts => {
         const gameId = 1;
         const stake = MinValue;
         beforeEach(async () => {
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(hash, {from: player, value: stake});
         });
 
@@ -133,7 +128,6 @@ contract('GameChannel', accounts => {
         const gameId = 1;
         const stake = MinValue;
         beforeEach(async () => {
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(hash, {from: player, value: stake});
         });
 
@@ -178,7 +172,6 @@ contract('GameChannel', accounts => {
         const gameId = 1;
         const stake = MinValue;
         beforeEach(async () => {
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(hash, {from: player, value: stake});
         });
 
@@ -229,7 +222,6 @@ contract('GameChannel', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(hash, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, hash, {from: server});
 
@@ -350,7 +342,6 @@ contract('GameChannel', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(hash, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, hash, {from: server});
 

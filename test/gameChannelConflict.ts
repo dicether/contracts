@@ -120,7 +120,6 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
@@ -442,7 +441,6 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
@@ -684,7 +682,6 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
@@ -741,7 +738,6 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
         });
@@ -800,7 +796,6 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
@@ -960,7 +955,6 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.addHouseStake({from: owner, value: 100e18});
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
