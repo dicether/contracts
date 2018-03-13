@@ -53,7 +53,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     }
 
     /// @dev Minimal time span between profit transfer.
-    uint public constant MIN_TRANSFER_TIMESPAN = 30 days;
+    uint public constant MIN_TRANSFER_TIMESPAN = 1 days;
 
     /// @dev Maximal time span between profit transfer.
     uint public constant MAX_TRANSFER_TIMSPAN = 6 * 30 days;
