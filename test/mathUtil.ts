@@ -7,7 +7,7 @@ configureChai();
 const expect = chai.expect;
 
 
-contract('MathUtilMock', accounts => {
+contract('MathUtilMock', () => {
     let mathUtil: any;
     
     before(async () => {
