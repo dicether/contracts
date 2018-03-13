@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 import * as ChaiAsPromised from 'chai-as-promised';
 import * as ChaiBigNumber from 'chai-bignumber';
+import {promisify} from "util";
 
 
 BigNumber.prototype.idiv = function(divider) {
@@ -9,8 +10,8 @@ BigNumber.prototype.idiv = function(divider) {
     return this.div(divider);
 };
 
-export function increaseTimeAsync(addSeconds: number) {
-    (web3.currentProvider as any).send({
+export async function increaseTimeAsync(addSeconds: number) {
+    await promisify(web3.currentProvider.sendAsync)({
         jsonrpc: "2.0",
         method: "evm_increaseTime",
         params: [addSeconds], id: 0
