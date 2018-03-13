@@ -125,7 +125,6 @@ contract ConflictResolution is ConflictResolutionInterface {
     )
         public
         view
-        onlyValidBet(_gameType, _betNum, _betValue)
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
