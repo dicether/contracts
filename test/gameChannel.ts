@@ -338,7 +338,7 @@ contract('GameChannel', accounts => {
         const balance = stake.div(2);
         const serverHash = hash;
         const playerHash = hash;
-        let contractAddress: string
+        let contractAddress: string;
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
