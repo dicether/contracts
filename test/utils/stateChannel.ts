@@ -141,10 +141,10 @@ export function signData(roundId: number, gameType: number, num: number, value: 
     const typedData = createTypedData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId, contractAddress);
     const msgParams = {data: typedData};
 
-    const privKey = publicPrivateKeyMap[account];
-    if (typeof privKey === 'undefined') {
+    if (!(account in publicPrivateKeyMap)) {
         throw Error("Invalid account! You need to run ganache with --mnemonic \"test\"");
     }
+    const privKey = publicPrivateKeyMap[account];
 
     return ethSigUtil.signTypedData(ethUtil.toBuffer(privKey), msgParams);
 }
