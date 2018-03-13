@@ -87,11 +87,9 @@ async function checkActiveGamesAsync(gameChannel: any, activeGamesRef: number) {
 
 
 contract('GameChannelConflict', accounts => {
-    const owner = accounts[0];
     const server = accounts[1];
     const player = accounts[2];
     const player2 = accounts[3];
-    const notServer = accounts[4];
 
     const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
     let gameChannel: any;
@@ -676,10 +674,7 @@ contract('GameChannelConflict', accounts => {
         const gameId = 1;
         const stake = MIN_STAKE;
 
-        let contractAddress;
-
         beforeEach(async () => {
-            contractAddress = gameChannel.address;
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
@@ -731,11 +726,8 @@ contract('GameChannelConflict', accounts => {
     describe('playerCancelActiveGame', () => {
         const gameId = 1;
         const stake = MIN_STAKE;
-
-        let contractAddress;
-
+        
         beforeEach(async () => {
-            contractAddress = gameChannel.address;
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
         });
