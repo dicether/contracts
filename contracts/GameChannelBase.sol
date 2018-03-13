@@ -136,7 +136,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     event LogGameAccepted(address indexed player, uint gameId, bytes32 endHash);
 
     /// @dev This event is fired when player requests conflict end.
-    event LogPlayerRequestedEnd(address playerAddress, uint gameId);
+    event LogPlayerRequestedEnd(address player, uint gameId);
 
     /// @dev This event is fired when server requests conflict end.
     event LogServerRequestedEnd(address indexed player, uint gameId);
