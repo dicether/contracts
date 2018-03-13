@@ -5,7 +5,7 @@
   ],
   "rules": {
     // core ts-lint rules
-    "await-promise": true,
+    "await-promise": false,
     "no-unused-variable": true,
     "forin": true,
     "no-bitwise": true,
