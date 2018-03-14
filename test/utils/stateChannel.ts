@@ -31,8 +31,8 @@ export enum GameType {
 export const HOUSE_STAKE = new BigNumber('100e18');
 export const MIN_STAKE = new BigNumber('1e17');
 export const MAX_STAKE = new BigNumber('1e18');
-export const MIN_VALUE = new BigNumber('1e14');
-export const MAX_VALUE = new BigNumber('1e17');
+export const MIN_VALUE = new BigNumber('1e13');
+export const MAX_VALUE = new BigNumber('2e16');
 export const MAX_BALANCE = MAX_VALUE.mul(500);
 
 export const NOT_ENDED_FINE = new BigNumber('1e15');
