@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {signData} from './utils/stateChannel';
+import {HOUSE_STAKE, MAX_STAKE, MIN_STAKE, signData} from './utils/stateChannel';
 import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
 
 
@@ -12,6 +12,8 @@ const expect = chai.expect;
 
 
 const hash = '0x0000000000000000000000000000000000000000000000000000000000000001';
+
+const PROFIT = MIN_STAKE;
 
 
 const createProfitAsync = async (gameChannel: any, player: string, server: string, profit: BigNumber) => {
@@ -42,8 +44,6 @@ contract('GameChannelBase', accounts => {
     const player = accounts[2];
     const notOwner = accounts[3];
 
-    const houseStake = new BigNumber('100e18');
-
     const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
 
     let gameChannel: any;
@@ -62,23 +62,23 @@ contract('GameChannelBase', accounts => {
 
     describe('transferProfitToHouse', () => {
         it("Should fail if wrong timeout 1!", async () => {
-            await createProfitAsync(gameChannel, player, server, new BigNumber('1e17'));
+            await createProfitAsync(gameChannel, player, server, PROFIT);
 
             return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if wrong timeout 2!", async () => {
-            await createProfitAsync(gameChannel, player, server, new BigNumber('1e17'));
+            await createProfitAsync(gameChannel, player, server, PROFIT);
 
             await increaseTimeAsync(3 * 30 * 24 * 60 * 60);  // 30days
             await gameChannel.transferProfitToHouse({from: notOwner});
 
-            await createProfitAsync(gameChannel, player, server, new BigNumber('1e17'));
+            await createProfitAsync(gameChannel, player, server, PROFIT);
             return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should transfer nothing if negative profit", async () => {
-            await createProfitAsync(gameChannel, player, server, new BigNumber('-1e17'));
+            await createProfitAsync(gameChannel, player, server, PROFIT.negated());
             await increaseTimeAsync(3 * 30 * 24 * 60 * 60);  // 30days
 
             const houseAddress = await gameChannel.houseAddress.call();
@@ -95,7 +95,7 @@ contract('GameChannelBase', accounts => {
         // });
 
         it("Should succeed!", async () => {
-            const profit = new BigNumber('1e17');
+            const profit = PROFIT;
             const timeSpan = 3 * 30 * 24 * 60 * 60;
 
             await createProfitAsync(gameChannel, player, server, profit);
@@ -149,25 +149,25 @@ contract('GameChannelBase', accounts => {
         });
 
         it('Should fail if below min house stake', async () => {
-            await gameChannel.createGame(hash, {from: player, value: new BigNumber('1e18')});
-            return expect(gameChannel.withdrawHouseStake(new BigNumber('100e18'), {from: owner}))
+            await gameChannel.createGame(hash, {from: player, value: MAX_STAKE});
+            return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR)
         });
 
         it('Should fail if house profit not backed', async () => {
-            const profit = new BigNumber('-1e18');
+            const profit = PROFIT.negated();
             await createProfitAsync(gameChannel, player, server, profit);
 
-            return expect(gameChannel.withdrawHouseStake(new BigNumber('100e18'), {from: owner}))
+            return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR)
         });
 
         it('Should succeed', async () => {
             const prevBalance = await web3.eth.getBalance(owner);
-            await gameChannel.withdrawHouseStake(houseStake, {from: owner});
+            await gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner});
             const afterBalance = await web3.eth.getBalance(owner);
 
-            expect(afterBalance).to.be.bignumber.greaterThan(prevBalance.add(houseStake)
+            expect(afterBalance).to.be.bignumber.greaterThan(prevBalance.add(HOUSE_STAKE)
                 .sub('0.1e18').toNumber()); // gas price
 
             const newHouseStake = await gameChannel.houseStake.call();

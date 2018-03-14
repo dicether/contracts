@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {MAX_BALANCE, signData} from './utils/stateChannel';
+import {HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MAX_VALUE, MIN_STAKE, MIN_VALUE, signData} from './utils/stateChannel';
 import {configureChai, TRANSACTION_ERROR} from './utils/util';
 
 
@@ -13,9 +13,6 @@ const expect = chai.expect;
 
 const withData = leche.withData;
 
-const HOUSE_STAKE = new BigNumber('100e18');
-const MinValue = new BigNumber('1e17');
-const MaxValue = new BigNumber('1e18');
 const hash = "0x0000000000000000000000000000000000000000000000000000000000000001"; // dummy hash
 
 
@@ -44,32 +41,32 @@ contract('GameChannel', accounts => {
     describe('createGame', () => {
         it("Should fail if house stake too low", async () => {
             await gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner});
-            await expect(gameChannel.createGame(hash, {from: player, value: MinValue})).to.be.rejectedWith(TRANSACTION_ERROR);
+            await expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if value too low", async () => {
-            return expect(gameChannel.createGame(hash, {from: player, value: MinValue.sub(1)})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE.sub(1)})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if value too high", async () => {
-            return expect(gameChannel.createGame(hash, {from: player, value: MaxValue.add(1)})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.createGame(hash, {from: player, value: MAX_STAKE.add(1)})).to.be.rejectedWith(TRANSACTION_ERROR);
 
         });
 
         it("Should fail if game paused", async () => {
             await gameChannel.pause({from: owner});
-            return expect(gameChannel.createGame(hash, {from: player, value: MinValue})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
 
         });
 
         it("Should fail if game not ended", async () => {
-            await gameChannel.createGame(hash, {from: player, value: MinValue});
-            return expect(gameChannel.createGame(hash, {from: player, value: MinValue})).to.be.rejectedWith(TRANSACTION_ERROR);
+            await gameChannel.createGame(hash, {from: player, value: MIN_STAKE});
+            return expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Create game should succeed", async () => {
             const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-            await gameChannel.createGame(hash, {from: player, value: MinValue});
+            await gameChannel.createGame(hash, {from: player, value: MIN_STAKE});
             const game = await gameChannel.gameIdGame.call(1);
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
 
@@ -77,10 +74,10 @@ contract('GameChannel', accounts => {
             const reasonEnded = game[1].toNumber();
             const stake = game[2];
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.add(MinValue));
+            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.add(MIN_STAKE));
             expect(status).to.equal(2); // waiting for server
             expect(reasonEnded).to.equal(0); // not ended
-            expect(stake).to.be.bignumber.equal(MinValue);
+            expect(stake).to.be.bignumber.equal(MIN_STAKE);
 
             const activeGames = await gameChannel.activeGames.call();
             expect(activeGames).to.be.bignumber.equal(1);
@@ -89,7 +86,7 @@ contract('GameChannel', accounts => {
 
     describe('cancelGame', () => {
         const gameId = 1;
-        const stake = MinValue;
+        const stake = MIN_STAKE;
         beforeEach(async () => {
             await gameChannel.createGame(hash, {from: player, value: stake});
         });
@@ -126,7 +123,7 @@ contract('GameChannel', accounts => {
 
     describe('rejectGame', () => {
         const gameId = 1;
-        const stake = MinValue;
+        const stake = MIN_STAKE;
         beforeEach(async () => {
             await gameChannel.createGame(hash, {from: player, value: stake});
         });
@@ -170,7 +167,7 @@ contract('GameChannel', accounts => {
 
     describe('acceptGame', () => {
         const gameId = 1;
-        const stake = MinValue;
+        const stake = MIN_STAKE;
         beforeEach(async () => {
             await gameChannel.createGame(hash, {from: player, value: stake});
         });
@@ -209,7 +206,7 @@ contract('GameChannel', accounts => {
 
     describe('serverEndGame', () => {
         const gameId = 1;
-        const stake = MinValue;
+        const stake = MIN_STAKE;
 
         const roundId = 10;
         const gameType = 0;
@@ -338,7 +335,7 @@ contract('GameChannel', accounts => {
 
     describe('playerEndGame', () => {
         const gameId = 1;
-        const stake = MinValue;
+        const stake = MIN_STAKE;
 
         const roundId = 10;
         const gameType = 0;

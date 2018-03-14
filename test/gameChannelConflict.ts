@@ -8,7 +8,7 @@ import {
     calcNewBalance,
     GameStatus,
     GameType,
-    MAX_BALANCE,
+    MAX_BALANCE, MAX_VALUE,
     MIN_STAKE,
     NOT_ENDED_FINE,
     PLAYER_TIMEOUT,
@@ -41,6 +41,7 @@ const shash2 = web3.sha3(shash1,
 const shash3 = web3.sha3(shash2,
         {encoding: "hex"});
 
+const BET_VALUE = MAX_VALUE;
 
 
 async function checkGameStatusAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number) {
@@ -125,7 +126,7 @@ contract('GameChannelConflict', accounts => {
             roundId: 10,
             gameType: 1,
             num: 80,
-            value: new BigNumber('1e17'),
+            value: BET_VALUE,
             balance: stake.idiv(2),
             serverHash: shash2,
             playerHash: phash2,
@@ -446,7 +447,7 @@ contract('GameChannelConflict', accounts => {
             roundId: 10,
             gameType: 1,
             num: 80,
-            value: new BigNumber('1e17'),
+            value: BET_VALUE,
             balance: stake.idiv(2),
             serverHash: shash2,
             playerHash: phash2,
@@ -806,7 +807,7 @@ contract('GameChannelConflict', accounts => {
             roundId: 10,
             gameType: 1,
             num: 80,
-            value: new BigNumber('1e17'),
+            value: BET_VALUE,
             balance: stake.idiv(2),
             serverHash: shash2,
             playerHash: phash2,
@@ -965,7 +966,7 @@ contract('GameChannelConflict', accounts => {
             roundId: 10,
             gameType: 1,
             num: 80,
-            value: new BigNumber('1e17'),
+            value: BET_VALUE,
             balance: stake.idiv(2),
             serverHash: shash2,
             playerHash: phash2,
