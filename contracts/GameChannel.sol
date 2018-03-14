@@ -72,9 +72,7 @@ contract GameChannel is GameChannelConflict {
         require(game.status == GameStatus.WAITING_FOR_SERVER);
 
         closeGame(game, gameId, playerAddress, ReasonEnded.CANCELLED_BY_PLAYER, 0);
-
-        pendingReturns[playerAddress] += game.stake;
-        safeSend(playerAddress);
+        payOut(game, playerAddress);
     }
 
     /**
@@ -91,8 +89,7 @@ contract GameChannel is GameChannelConflict {
         require(game.status == GameStatus.WAITING_FOR_SERVER);
 
         closeGame(game, gameId, _playerAddress, ReasonEnded.REJECTED_BY_SERVER, 0);
-        pendingReturns[_playerAddress] += game.stake;
-        safeSend(_playerAddress);
+        payOut(game, _playerAddress);
 
         LogGameRejected(_playerAddress, gameId);
     }
