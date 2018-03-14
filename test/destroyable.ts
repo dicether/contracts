@@ -2,7 +2,7 @@ const GameChannel = artifacts.require("./GameChannel.sol");
 import * as chai from 'chai';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
+import {configureChai, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
 
 
 configureChai();
@@ -49,8 +49,16 @@ contract('Destroyable', accounts => {
         it('Should succeed of owner call with correct timeout', async () => {
             await gameChannel.pause({from: owner});
             await increaseTimeAsync(DestroyTimeout);
-            await gameChannel.destroy({from: owner});
-            // TODO: Add balance check
+
+            const contractBalance = await web3.eth.getBalance(gameChannel.address);
+            const oldBalance = await web3.eth.getBalance(owner);
+
+            const res = await gameChannel.destroy({from: owner});
+
+            const newBalance = await web3.eth.getBalance(owner);
+            const transactionCost = await getTransactionCost(res.receipt);
+
+            expect(newBalance).to.be.bignumber.equal(oldBalance.add(contractBalance).sub(transactionCost));
         });
     });
 });
