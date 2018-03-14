@@ -63,7 +63,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * Calculate minimum needed house stake.
      */
     function minHouseStake(uint activeGames) public pure returns(uint) {
-        return  MathUtil.min(activeGames * 2, 10) * MAX_BET_VALUE * 100;
+        return  MathUtil.min(activeGames, 1) * MAX_BET_VALUE * 400;
     }
 
     /**
