@@ -324,7 +324,6 @@ contract('GameChannel', accounts => {
         });
 
         // TODO: Test should fail is game status !== active!
-        // TODO: Test shoudl fail balance too high!
     });
 
     describe('playerEndGame', () => {
@@ -441,6 +440,5 @@ contract('GameChannel', accounts => {
         });
 
         // TODO: Test should fail is game status !== active!
-        // TODO: Test should fail balance too high!
     });
 });
