@@ -300,6 +300,18 @@ contract('GameChannel', accounts => {
             ).to.to.rejectedWith(TRANSACTION_ERROR);
         });
 
+        it("Should fail if game session status not active", async () => {
+            const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
+                gameChannel.address, player);
+
+            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+
+            return expect(
+                gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
+                    contractAddress, player, sig, {from: server})
+            ).to.be.rejectedWith(TRANSACTION_ERROR);
+        });
+
         it("serverEndGame should succeed", async () => {
             const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
                 gameChannel.address, player);
@@ -322,8 +334,6 @@ contract('GameChannel', accounts => {
             const activeGames = await gameChannel.activeGames.call();
             expect(activeGames).to.be.bignumber.equal(0);
         });
-
-        // TODO: Test should fail is game status !== active!
     });
 
     describe('playerEndGame', () => {
@@ -416,6 +426,18 @@ contract('GameChannel', accounts => {
             ).to.to.rejectedWith(TRANSACTION_ERROR);
         });
 
+        it("Should fail if game session status not active", async () => {
+            const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
+                gameChannel.address, server);
+
+            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+
+            return expect(
+                gameChannel.playerEndGame(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
+                    contractAddress, sig, {from: player})
+            ).to.rejectedWith(TRANSACTION_ERROR);
+        });
+
         it("playerEndGame should succeed", async () => {
             const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
                 gameChannel.address, server);
@@ -438,7 +460,5 @@ contract('GameChannel', accounts => {
             const activeGames = await gameChannel.activeGames.call();
             expect(activeGames).to.be.bignumber.equal(0);
         });
-
-        // TODO: Test should fail is game status !== active!
     });
 });
