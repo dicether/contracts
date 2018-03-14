@@ -687,6 +687,12 @@ contract('GameChannelConflict', accounts => {
             return expect(gameChannel.serverCancelActiveGame(player, 2, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
+        it("Should fail if game status not active", async () => {
+            await gameChannel.playerCancelActiveGame(1, {from: player});
+
+            return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+        });
+
         it("Should fail if wrong player address", async () => {
             await gameChannel.createGame(phash3, {from: player2, value: stake});
             await gameChannel.acceptGame(player2, 2, shash3, {from: server});
@@ -733,8 +739,14 @@ contract('GameChannelConflict', accounts => {
         });
 
         it("Should fail if wrong gameId", async () => {
-            await gameChannel.createGame(phash3, {from: player2, value: stake});
-            await gameChannel.acceptGame(player2, 2, shash3, {from: server});
+            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+            const game = await gameChannel.gameIdGame.call(gameId);
+
+            return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+        });
+
+        it("Should fail if game status not active", async () => {
+            await gameChannel.playerCancelActiveGame(gameId, {from: player});
 
             return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
@@ -776,7 +788,6 @@ contract('GameChannelConflict', accounts => {
             await checkActiveGamesAsync(gameChannel, 1);
         });
     });
-    // TODO: check not possible if already conflict!
 
     describe('serverForceGameEnd', async () => {
         const gameId = 1;
