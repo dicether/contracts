@@ -28,7 +28,7 @@ export enum GameType {
    DICE = 1
 }
 
-export const HOUSE_STAKE = new BigNumber('100e18');
+export const HOUSE_STAKE = new BigNumber('10e18');
 export const MIN_STAKE = new BigNumber('1e17');
 export const MAX_STAKE = new BigNumber('1e18');
 export const MIN_VALUE = new BigNumber('1e13');

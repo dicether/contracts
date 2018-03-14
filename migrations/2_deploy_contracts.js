@@ -19,7 +19,7 @@ module.exports = function(deployer, network, accounts) {
         return GameChannel.deployed();
     }).then(gameChannel => {
         if (network === "development") {
-            gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('100e18')});
+            gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('10e18')});
         }
      });
 };
