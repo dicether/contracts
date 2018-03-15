@@ -5,16 +5,8 @@ import * as leche from 'leche';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
 import {
-    calcNewBalance,
-    GameStatus,
-    GameType,
-    MAX_BALANCE, MAX_VALUE,
-    MIN_STAKE,
-    NOT_ENDED_FINE,
-    PLAYER_TIMEOUT,
-    ReasonEnded,
-    SERVER_TIMEOUT,
-    signData
+    calcNewBalance, GameStatus, GameType, MAX_BALANCE, MAX_STAKE, MAX_VALUE, NOT_ENDED_FINE, PLAYER_TIMEOUT,
+    ReasonEnded, SERVER_TIMEOUT, signData
 } from './utils/stateChannel';
 import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
 
@@ -111,7 +103,7 @@ contract('GameChannelConflict', accounts => {
 
     describe('serverEndConflict', () => {
         const gameId = 1;
-        const stake = MIN_STAKE;
+        const stake = MAX_STAKE;
 
         let contractAddress: string;
 
@@ -432,7 +424,7 @@ contract('GameChannelConflict', accounts => {
 
     describe('playerEndConflict', () => {
         const gameId = 1;
-        const stake = MIN_STAKE;
+        const stake = MAX_STAKE;
 
         let contractAddress: string;
 
@@ -673,7 +665,7 @@ contract('GameChannelConflict', accounts => {
 
     describe('serverCancelActiveGame', () => {
         const gameId = 1;
-        const stake = MIN_STAKE;
+        const stake = MAX_STAKE;
 
         beforeEach(async () => {
             await gameChannel.createGame(phash3, {from: player, value: stake});
@@ -732,7 +724,7 @@ contract('GameChannelConflict', accounts => {
 
     describe('playerCancelActiveGame', () => {
         const gameId = 1;
-        const stake = MIN_STAKE;
+        const stake = MAX_STAKE;
         
         beforeEach(async () => {
             await gameChannel.createGame(phash3, {from: player, value: stake});
@@ -792,7 +784,7 @@ contract('GameChannelConflict', accounts => {
 
     describe('serverForceGameEnd', async () => {
         const gameId = 1;
-        const stake = MIN_STAKE;
+        const stake = MAX_STAKE;
 
         let contractAddress: string;
 
@@ -951,7 +943,7 @@ contract('GameChannelConflict', accounts => {
 
     describe('playerForceGameEnd', async () => {
         const gameId = 1;
-        const stake = MIN_STAKE;
+        const stake = MAX_STAKE;
 
         let contractAddress: string;
 
