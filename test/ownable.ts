@@ -36,6 +36,10 @@ contract('Ownable', accounts => {
         return expect(gameChannel.setOwner(newOwner, {from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
     });
 
+    it('Should fail if 0x0 address is set as new owner', async () => {
+        return expect(gameChannel.setOwner(null, {from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
+    });
+
     it('New owner should be settable by owner', async () => {
         await gameChannel.setOwner(newOwner, {from: owner});
         expect(await gameChannel.owner.call()).to.equal(newOwner);
