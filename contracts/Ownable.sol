@@ -9,6 +9,8 @@ pragma solidity 0.4.18;
 contract Ownable {
     address public owner;
 
+    event LogOwnerShipTransferred(address indexed previousOwner, address indexed newOwner);
+
     /**
      * @dev Modifier, which throws if called by other account than owner.
      */
@@ -30,6 +32,7 @@ contract Ownable {
      * @param _newOwner The address to transfer ownership to.
      */
     function setOwner(address _newOwner) public onlyOwner {
+        LogOwnerShipTransferred(owner, _newOwner);
         owner = _newOwner;
     }
 }
