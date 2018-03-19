@@ -127,22 +127,22 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     }
 
     /// @dev This event is fired when player creates game session.
-    event LogGameCreated(address player, uint gameId, uint stake, bytes32 endHash);
+    event LogGameCreated(address indexed player, uint indexed gameId, uint stake, bytes32 endHash);
 
     /// @dev This event is fired when server rejects player's game.
-    event LogGameRejected(address indexed player, uint gameId);
+    event LogGameRejected(address indexed player, uint indexed gameId);
 
     /// @dev This event is fired when server accepts player's game.
-    event LogGameAccepted(address indexed player, uint gameId, bytes32 endHash);
+    event LogGameAccepted(address indexed player, uint indexed gameId, bytes32 endHash);
 
     /// @dev This event is fired when player requests conflict end.
-    event LogPlayerRequestedEnd(address player, uint gameId);
+    event LogPlayerRequestedEnd(address indexed player, uint indexed gameId);
 
     /// @dev This event is fired when server requests conflict end.
-    event LogServerRequestedEnd(address indexed player, uint gameId);
+    event LogServerRequestedEnd(address indexed player, uint indexed gameId);
 
     /// @dev This event is fired when game session is ended.
-    event LogGameEnded(address indexed player, uint gameId, ReasonEnded reason);
+    event LogGameEnded(address indexed player, uint indexed gameId, ReasonEnded reason);
 
     /// @dev this event is fired when owner modifies player's stake limits.
     event LogStakeLimitsModified(uint minStake, uint maxStake);
