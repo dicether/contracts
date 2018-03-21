@@ -3,8 +3,8 @@ import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {HOUSE_STAKE, MAX_STAKE, MIN_STAKE, signData} from './utils/stateChannel';
-import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
+import {HOUSE_STAKE, MAX_STAKE, MIN_STAKE, signData, WITHDRAW_ALL_TIMEOUT} from './utils/stateChannel';
+import {configureChai, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
 
 
 configureChai();
@@ -172,6 +172,43 @@ contract('GameChannelBase', accounts => {
 
             const newHouseStake = await gameChannel.houseStake.call();
             expect(newHouseStake).to.be.bignumber.equal(0);
+        })
+    });
+
+    describe('withdrawAll', async () => {
+        it("Should fail if not owner", async () => {
+            await gameChannel.pause({from: owner});
+            await increaseTimeAsync(WITHDRAW_ALL_TIMEOUT);
+            return expect(gameChannel.withdrawAll({from: notOwner}))
+                .to.be.rejectedWith(TRANSACTION_ERROR)
+        });
+
+        it("Should fail if not paused long enough", async () => {
+            await gameChannel.pause({from: owner});
+            await increaseTimeAsync(WITHDRAW_ALL_TIMEOUT - 10);
+            return expect(gameChannel.withdrawAll({from: owner}))
+                .to.be.rejectedWith(TRANSACTION_ERROR)
+        });
+
+        it('Should succeed', async () => {
+            await gameChannel.pause({from: owner});
+            await increaseTimeAsync(WITHDRAW_ALL_TIMEOUT);
+
+            const prevBalanceOwner = await web3.eth.getBalance(owner);
+            const prevStakeContract = await gameChannel.houseStake.call();
+
+            const res = await gameChannel.withdrawAll({from: owner});
+
+            const afterBalanceOwner = await web3.eth.getBalance(owner);
+            const transactionCost = await getTransactionCost(res.receipt);
+
+            expect(afterBalanceOwner).to.be.bignumber.equal(prevBalanceOwner.add(prevStakeContract).sub(transactionCost));
+
+            const newHouseStake = await gameChannel.houseStake.call();
+            expect(newHouseStake).to.be.bignumber.equal(0);
+
+            const newHouseProfit = await gameChannel.houseProfit.call();
+            expect(newHouseProfit).to.be.bignumber.equal(0);
         })
     });
 

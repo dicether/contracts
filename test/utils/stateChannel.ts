@@ -6,6 +6,7 @@ import * as ethUtil from 'ethereumjs-util';
 export const RANGE = 100;
 export const HOUSE_EDGE = 150;
 export const HOUSE_EDGE_DIVISOR = 10000;
+export const WITHDRAW_ALL_TIMEOUT = 3 * 24 * 60 * 60; // in seconds
 
 export enum GameStatus {
     ENDED = 0,

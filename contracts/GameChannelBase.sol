@@ -255,6 +255,16 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     }
 
     /**
+     * @dev Withdraw house stake and profit.
+     */
+    function withdrawAll() public onlyOwner onlyPausedSince(3 days) {
+        houseProfit = 0;
+        uint toTransfer = houseStake;
+        houseStake = 0;
+        owner.transfer(toTransfer);
+    }
+
+    /**
      * @dev Set new house address.
      * @param _houseAddress New house address.
      */
