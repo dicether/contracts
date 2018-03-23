@@ -41,6 +41,10 @@ export const NOT_ENDED_FINE = new BigNumber('1e15');
 export const SERVER_TIMEOUT = 2 * 24 * 3600;
 export const PLAYER_TIMEOUT = 2 * 24 * 3600;
 
+export const PROFIT_TRANSFER_TIMESPAN_MIN = 24 * 60 * 60;
+export const PROFIT_TRANSFER_TIMESPAN_MAX = 6 * 30 * 24 * 60 * 60;
+export const PROFIT_TRANSFER_TIMESPAN = 3 * 30 * 24 * 60 * 60;
+
 const publicPrivateKeyMap: {[id: string]: string} = {
     '0x26006236eab6409d9fdecb16ed841033d6b4a6bc': '0x1ce6a4cc4c9941a4781349f988e129accdc35a55bb3d5b1a7b342bc2171db484',
     '0xa8d5f39f3ccd4795b0e38feacb4f2ee22486ca44': '0xc7ab5af90a9373bdd03d5708cfba1a4117dbd204237b90d55e9842c71e631d97',

@@ -3,7 +3,11 @@ import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {HOUSE_STAKE, MAX_STAKE, MIN_STAKE, signData, WITHDRAW_ALL_TIMEOUT} from './utils/stateChannel';
+import {
+    HOUSE_STAKE, MAX_STAKE, MIN_STAKE, PROFIT_TRANSFER_TIMESPAN, PROFIT_TRANSFER_TIMESPAN_MAX,
+    PROFIT_TRANSFER_TIMESPAN_MIN, signData,
+    WITHDRAW_ALL_TIMEOUT
+} from './utils/stateChannel';
 import {configureChai, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
 
 
@@ -70,7 +74,7 @@ contract('GameChannelBase', accounts => {
         it("Should fail if wrong timeout 2!", async () => {
             await createProfitAsync(gameChannel, player, server, PROFIT);
 
-            await increaseTimeAsync(3 * 30 * 24 * 60 * 60);  // 30days
+            await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
             await gameChannel.transferProfitToHouse({from: notOwner});
 
             await createProfitAsync(gameChannel, player, server, PROFIT);
@@ -79,7 +83,7 @@ contract('GameChannelBase', accounts => {
 
         it("Should transfer nothing if negative profit", async () => {
             await createProfitAsync(gameChannel, player, server, PROFIT.negated());
-            await increaseTimeAsync(3 * 30 * 24 * 60 * 60);  // 30days
+            await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
 
             const houseAddress = await gameChannel.houseAddress.call();
 
@@ -96,7 +100,7 @@ contract('GameChannelBase', accounts => {
 
         it("Should succeed!", async () => {
             const profit = PROFIT;
-            const timeSpan = 3 * 30 * 24 * 60 * 60;
+            const timeSpan = PROFIT_TRANSFER_TIMESPAN;
 
             await createProfitAsync(gameChannel, player, server, profit);
 
@@ -115,26 +119,24 @@ contract('GameChannelBase', accounts => {
     });
 
     describe('setProfitTransferTimespan', () => {
-        const MIN_TIME_SPAN = 30 * 24 * 60 * 60;
-        const MAX_TIME_SPAN = 6 * 30 * 24 * 60 * 60;
+        const newTimeSpan = (PROFIT_TRANSFER_TIMESPAN_MAX + PROFIT_TRANSFER_TIMESPAN_MIN) / 2;
 
         it("Should fail if not owner", async () => {
-            return expect(gameChannel.setProfitTransferTimeSpan(3 * 30 * 24 * 60 * 60, {from: notOwner}))
+            return expect(gameChannel.setProfitTransferTimeSpan(newTimeSpan, {from: notOwner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if too low time span", async () => {
-            return expect(gameChannel.setProfitTransferTimeSpan(MIN_TIME_SPAN - 1, {from: notOwner}))
+            return expect(gameChannel.setProfitTransferTimeSpan(PROFIT_TRANSFER_TIMESPAN_MIN - 1, {from: notOwner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if too high time span", async () => {
-            return expect(gameChannel.setProfitTransferTimeSpan(MAX_TIME_SPAN + 1, {from: notOwner}))
+            return expect(gameChannel.setProfitTransferTimeSpan(PROFIT_TRANSFER_TIMESPAN_MAX + 1, {from: notOwner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should succeed!", async () => {
-            const newTimeSpan = 30 * 24 * 60 * 60;
             await gameChannel.setProfitTransferTimeSpan(newTimeSpan, {from: owner});
 
             const newTimeSpanSet = await gameChannel.profitTransferTimeSpan.call();
