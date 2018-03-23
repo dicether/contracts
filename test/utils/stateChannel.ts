@@ -43,7 +43,7 @@ export const PLAYER_TIMEOUT = 2 * 24 * 3600;
 
 export const PROFIT_TRANSFER_TIMESPAN_MIN = 24 * 60 * 60;
 export const PROFIT_TRANSFER_TIMESPAN_MAX = 6 * 30 * 24 * 60 * 60;
-export const PROFIT_TRANSFER_TIMESPAN = 3 * 30 * 24 * 60 * 60;
+export const PROFIT_TRANSFER_TIMESPAN = 14 * 24 * 60 * 60;
 
 const publicPrivateKeyMap: {[id: string]: string} = {
     '0x26006236eab6409d9fdecb16ed841033d6b4a6bc': '0x1ce6a4cc4c9941a4781349f988e129accdc35a55bb3d5b1a7b342bc2171db484',

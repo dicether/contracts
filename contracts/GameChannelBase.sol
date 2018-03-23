@@ -84,7 +84,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     uint public maxStake;
 
     /// @dev Timeout until next profit transfer is allowed.
-    uint public profitTransferTimeSpan = 3 * 30 days;
+    uint public profitTransferTimeSpan = 14 days;
 
     /// @dev Last time profit transferred to house.
     uint public lastProfitTransferTimestamp;
