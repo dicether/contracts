@@ -19,7 +19,7 @@ contract ConflictResolution is ConflictResolutionInterface {
     uint public constant PLAYER_TIMEOUT = 1 days;
 
     uint8 public constant GAME_TYPE_DICE = 1;
-    uint public constant MAX_BET_VALUE = 2e16; /// max 0.01 ether bet
+    uint public constant MAX_BET_VALUE = 1e16; /// max 0.01 ether bet
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
 
     int public constant NOT_ENDED_FINE = 1e15; /// 0.001 ether
