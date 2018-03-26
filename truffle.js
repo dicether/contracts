@@ -13,7 +13,7 @@ module.exports = {
       host: "localhost",
       from: "0x1120336b9a0631d65013dbfe7a68b61b586fc2f7",
       port: 8546,
-      gas:4712388,
+      gas: 300000,
       gasPrice: 4000000000, // 4 GWei
       network_id: "4" // Match any network id
     }
