@@ -15,7 +15,15 @@ module.exports = {
       port: 8546,
       gas: 300000,
       gasPrice: 4000000000, // 4 GWei
-      network_id: "4" // Match any network id
+      network_id: "4" // Match  rinkeby network
+    },
+    main: {
+      host: "localhost",
+      from: "0x324ec9421c051d1ec1855ef6fe49263c02b35c77",
+      port: 8546,
+      gas: 300000,
+      gasPrice: 4000000000, // 4 GWei
+      network_id: "1" // Match main network
     }
   },
   solc: {
