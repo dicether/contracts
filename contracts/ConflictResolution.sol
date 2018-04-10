@@ -18,7 +18,9 @@ contract ConflictResolution is ConflictResolutionInterface {
     uint public constant SERVER_TIMEOUT = 2 days;
     uint public constant PLAYER_TIMEOUT = 1 days;
 
-    uint8 public constant GAME_TYPE_DICE = 1;
+    uint8 public constant DICE_LOWER = 1; ///< @dev dice game lower number wins
+    uint8 public constant DICE_HIGHER = 2; ///< @dev dice game higher number wins
+
     uint public constant MAX_BET_VALUE = 1e16; /// max 0.01 ether bet
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
 
@@ -45,11 +47,18 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @return True if bet is valid false otherwise.
      */
     function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) public pure returns(bool) {
-        return (
-            (_gameType == GAME_TYPE_DICE) &&
-            (_betNum > 0 && _betNum < DICE_RANGE) &&
-            (MIN_BET_VALUE <= _betValue && _betValue <= MAX_BET_VALUE)
-        );
+        bool validValue = MIN_BET_VALUE <= _betValue && _betValue <= MAX_BET_VALUE;
+        bool validGame = false;
+
+        if (_gameType == DICE_LOWER) {
+            validGame = _betNum > 0 && _betNum < DICE_RANGE - 1;
+        } else if (_gameType == DICE_HIGHER) {
+            validGame = _betNum > 0 && _betNum < DICE_RANGE - 1;
+        } else {
+            validGame = false;
+        }
+
+        return validValue && validGame;
     }
 
     /**
@@ -93,10 +102,10 @@ contract ConflictResolution is ConflictResolutionInterface {
     {
         assert(_serverSeed != 0 && _playerSeed != 0);
 
-        int newBalance =  processDiceBet(_betNum, _betValue, _balance, _serverSeed, _playerSeed);
+        int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _playerSeed);
 
         // do not allow balance below player stake
-        int stake = int(_stake);
+        int stake = int(_stake); // safe to cast as stake range is fixed
         if (newBalance < -stake) {
             newBalance = -stake;
         }
@@ -141,7 +150,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         newBalance -= NOT_ENDED_FINE;
 
         // do not allow balance below player stake
-        int stake = int(_stake);
+        int stake = int(_stake); // safe to cast as stake range is fixed
         if (newBalance < -stake) {
             newBalance = -stake;
         }
@@ -181,7 +190,7 @@ contract ConflictResolution is ConflictResolutionInterface {
             // player cancelled game without playing
             profit = 0;
         } else {
-            profit = calculateDiceProfit(_betNum, _betValue);
+            profit = int(calculateProfit(_gameType, _betNum, _betValue)); // safe to cast as ranges are limited
         }
 
         // penalize server as it didn't end game
@@ -192,13 +201,16 @@ contract ConflictResolution is ConflictResolutionInterface {
 
     /**
      * @dev Calculate new balance after executing bet.
-     * @param _serverSeed Server's seed
-     * @param _playerSeed Player's seed
+     * @param _gameType game type.
      * @param _betNum Bet Number.
      * @param _betValue Value of bet.
      * @param _balance Current balance.
+     * @param _serverSeed Server's seed
+     * @param _playerSeed Player's seed
+     * return new balance.
      */
-    function processDiceBet(
+    function processBet(
+        uint8 _gameType,
         uint _betNum,
         uint _betValue,
         int _balance,
@@ -209,60 +221,126 @@ contract ConflictResolution is ConflictResolutionInterface {
         pure
         returns (int)
     {
-        assert(_betNum > 0 && _betNum < DICE_RANGE);
-
-        // check who has won
-        bool playerWon = calculateDiceWinner(_serverSeed, _playerSeed, _betNum);
-
-        if (playerWon) {
-            int profit = calculateDiceProfit(_betNum, _betValue);
-            return _balance + profit;
+        bool won = hasPlayerWon(_gameType, _betNum, _serverSeed, _playerSeed);
+        if (!won) {
+            return _balance - int(_betValue); // safe to cast as ranges are fixed
         } else {
-            return _balance - int(_betValue);
+            int profit = calculateProfit(_gameType, _betNum, _betValue);
+            return _balance + profit;
         }
     }
 
     /**
-     * @dev Calculate player profit if player has won.
-     * @param _betNum Bet number of player.
-     * @param _betValue Value of bet.safe
-     * @return Players' profit.
+     * @dev Calculate player profit.
+     * @param _gameType type of game.
+     * @param _betNum bet numbe.
+     * @param _betValue bet value.
+     * return profit of player
      */
-    function calculateDiceProfit(uint _betNum, uint _betValue) private pure returns(int) {
-        assert(_betNum > 0 && _betNum < DICE_RANGE);
+    function calculateProfit(uint8 _gameType, uint _betNum, uint _betValue) private pure returns(int) {
+        uint betValueInGwei = _betValue / 1e9; // convert to gwei
+        int res = 0;
 
-        // convert to gwei as we use gwei as lowest unit
-        uint betValue = _betValue / 1e9;
-
-        // safe without safe math as ranges are fixed
-        uint totalWon = betValue * DICE_RANGE / _betNum;
-        uint houseEdgeValue = totalWon * HOUSE_EDGE / HOUSE_EDGE_DIVISOR;
-        int profit = int(totalWon) - int(houseEdgeValue) - int(betValue);
-
-        // convert back to wei and return
-        return profit * 1e9;
+        if (_gameType == DICE_LOWER) {
+            res = calculateProfitGameType1(_betNum, betValueInGwei);
+        } else if (_gameType == DICE_HIGHER) {
+            res = calculateProfitGameType2(_betNum, betValueInGwei);
+        } else {
+            assert(false);
+        }
+        return res * 1e9; // convert to wei
     }
 
     /**
-     * @dev Calculate winner of dice game.
-     * @param _serverSeed Server seed of bet.
-     * @param _playerSeed Player seed of bet.
-     * @param _betNum Bet number.
-     * @return True if player has won false if he lost.
+     * Calculate player profit from total won.
+     * @param _totalWon player winning in gwei.
+     * @return player profit in gwei.
      */
-    function calculateDiceWinner(
+    function calcProfitFromTotalWon(uint _totalWon, uint _betValue) private pure returns(int) {
+        // safe to multiply as _totalWon range is fixed.
+        uint houseEdgeValue = _totalWon * HOUSE_EDGE / HOUSE_EDGE_DIVISOR;
+
+        // safe to cast as all value ranges are fixed
+        return int(_totalWon) - int(houseEdgeValue) - int(_betValue);
+    }
+
+    /**
+     * @dev Calculate player profit if player has won for game type 1 (dice lower wins).
+     * @param _betNum Bet number of player.
+     * @param _betValue Value of bet in gwei.
+     * @return Players' profit.
+     */
+    function calculateProfitGameType1(uint _betNum, uint _betValue) private pure returns(int) {
+        assert(_betNum > 0 && _betNum < DICE_RANGE);
+
+        // safe as ranges are fixed
+        uint totalWon = _betValue * DICE_RANGE / _betNum;
+        return calcProfitFromTotalWon(totalWon, _betValue);
+    }
+
+    /**
+     * @dev Calculate player profit if player has won for game type 2 (dice lower wins).
+     * @param _betNum Bet number of player.
+     * @param _betValue Value of bet in gwei.
+     * @return Players' profit.
+     */
+    function calculateProfitGameType2(uint _betNum, uint _betValue) private pure returns(int) {
+        assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
+
+        // safe as ranges are fixed
+        uint totalWon = _betValue * DICE_RANGE / (DICE_RANGE - _betNum - 1);
+        return calcProfitFromTotalWon(totalWon, _betValue);
+    }
+
+    /**
+     * @dev Check if player hash won or lost.
+     * @return true if player has won.
+     */
+    function hasPlayerWon(
+        uint8 _gameType,
+        uint _betNum,
         bytes32 _serverSeed,
-        bytes32 _playerSeed,
-        uint _betNum
+        bytes32 _playerSeed
     )
         private
         pure
         returns(bool)
     {
+        bytes32 combinedHash = keccak256(_serverSeed, _playerSeed);
+        uint randNum = uint(combinedHash);
+
+        if (_gameType == 1) {
+            return calculateWinnerGameType1(randNum, _betNum);
+        } else if (_gameType == 2) {
+            return calculateWinnerGameType2(randNum, _betNum);
+        } else {
+            assert(false);
+        }
+    }
+
+    /**
+     * @dev Calculate winner of game type 1 (roll lower).
+     * @param _randomNum 256 bit random number.
+     * @param _betNum Bet number.
+     * @return True if player has won false if he lost.
+     */
+    function calculateWinnerGameType1(uint _randomNum, uint _betNum) private pure returns(bool) {
         assert(_betNum > 0 && _betNum < DICE_RANGE);
 
-        bytes32 combinedHash = keccak256(_serverSeed, _playerSeed);
-        uint randomNumber = uint(combinedHash) % DICE_RANGE; // bias is negligible
-        return randomNumber < _betNum;
+        uint resultNum = _randomNum % DICE_RANGE; // bias is negligible
+        return resultNum < _betNum;
+    }
+
+    /**
+     * @dev Calculate winner of game type 2 (roll higher).
+     * @param _randomNum 256 bit random number.
+     * @param _betNum Bet number.
+     * @return True if player has won false if he lost.
+     */
+    function calculateWinnerGameType2(uint _randomNum, uint _betNum) private pure returns(bool) {
+        assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
+
+        uint resultNum = _randomNum % DICE_RANGE; // bias is negligible
+        return resultNum > _betNum;
     }
 }
