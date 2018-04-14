@@ -8,7 +8,7 @@ import * as Web3 from 'web3';
 
 BigNumber.prototype.idiv = function(divider) {
     // tslint:disable-next-line:no-invalid-this
-    return this.div(divider);
+    return this.dividedToIntegerBy(divider);
 };
 
 export async function increaseTimeAsync(addSeconds: number) {
