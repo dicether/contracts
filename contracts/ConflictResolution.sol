@@ -21,7 +21,7 @@ contract ConflictResolution is ConflictResolutionInterface {
     uint8 public constant DICE_LOWER = 1; ///< @dev dice game lower number wins
     uint8 public constant DICE_HIGHER = 2; ///< @dev dice game higher number wins
 
-    uint public constant MAX_BET_VALUE = 1e16; /// max 0.01 ether bet
+    uint public constant MAX_BET_VALUE = 2e16; /// max 0.02 ether bet
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
 
     int public constant NOT_ENDED_FINE = 1e15; /// 0.001 ether
