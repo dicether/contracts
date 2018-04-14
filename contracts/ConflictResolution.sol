@@ -15,8 +15,8 @@ contract ConflictResolution is ConflictResolutionInterface {
     uint public constant HOUSE_EDGE = 150;
     uint public constant HOUSE_EDGE_DIVISOR = 10000;
 
-    uint public constant SERVER_TIMEOUT = 2 days;
-    uint public constant PLAYER_TIMEOUT = 1 days;
+    uint public constant SERVER_TIMEOUT = 6 hours;
+    uint public constant PLAYER_TIMEOUT = 6 hours;
 
     uint8 public constant DICE_LOWER = 1; ///< @dev dice game lower number wins
     uint8 public constant DICE_HIGHER = 2; ///< @dev dice game higher number wins
