@@ -287,52 +287,63 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             return expect(gameChannel.playerForceGameEnd(d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
-        it("Force end should succeed", async () => {
-            const d = defaultData;
-            const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), d.signer);
+        withData({
+                'game type 1': {
+                    ...defaultData, gameType: 1
+                },
+                'game type 2': {
+                    ...defaultData, gameType: 2
+                },
+            }, (d: typeof defaultData)  => {
 
-            await gameChannel.playerEndGameConflict(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.playerHash,
-                d.gameId,
-                d.contractAddress(),
-                serverSig,
-                d.playerSeed,
-                {from: d.from}
-            );
+            it("should succeed", async () => {
+                const d = defaultData;
+                const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                    d.playerHash, d.gameId, d.contractAddress(), d.signer);
 
-            await increaseTimeAsync(PLAYER_TIMEOUT);
+                console.log("Game type", d.gameType);
+                await gameChannel.playerEndGameConflict(
+                    d.roundId,
+                    d.gameType,
+                    d.num,
+                    d.value,
+                    d.balance,
+                    d.serverHash,
+                    d.playerHash,
+                    d.gameId,
+                    d.contractAddress(),
+                    serverSig,
+                    d.playerSeed,
+                    {from: d.from}
+                );
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-            const houseProfitBefore = await gameChannel.houseProfit.call();
-            const houseStakeBefore = await gameChannel.houseStake.call();
+                await increaseTimeAsync(PLAYER_TIMEOUT);
 
-            await gameChannel.playerForceGameEnd(d.gameId, {from: player});
+                const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+                const houseProfitBefore = await gameChannel.houseProfit.call();
+                const houseStakeBefore = await gameChannel.houseStake.call();
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
-            const houseProfitAfter= await gameChannel.houseProfit.call();
-            const houseStakeAfter = await gameChannel.houseStake.call();
+                await gameChannel.playerForceGameEnd(d.gameId, {from: player});
 
-            // check new balances (profit, stake, contract balance)
-            const newBalance = BigNumber.max(calcNewBalance(d.gameType, d.num, d.value, d.serverSeed, d.playerSeed, d.balance)
-                    .add(NOT_ENDED_FINE),
-                stake.negated()
-            );
-            const payout = stake.add(newBalance);
+                const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+                const houseProfitAfter = await gameChannel.houseProfit.call();
+                const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+                // check new balances (profit, stake, contract balance)
+                const newBalance = BigNumber.max(calcNewBalance(d.gameType, d.num, d.value, d.serverSeed, d.playerSeed, d.balance)
+                        .add(NOT_ENDED_FINE),
+                    stake.negated()
+                );
+                const payout = stake.add(newBalance);
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.END_FORCED_BY_PLAYER);
+                expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
+                expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
+                expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
 
-            await checkActiveGamesAsync(gameChannel, 0);
+                await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.END_FORCED_BY_PLAYER);
+
+                await checkActiveGamesAsync(gameChannel, 0);
+            });
         });
 
         // TODO: Add wrong game id check
