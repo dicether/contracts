@@ -7,7 +7,7 @@
     "build": "tsc",
     "compile": "truffle compile",
     "migrate": "truffle migrate --network development",
-    "mocha": " truffle test --network development ./lib/test/*.js",
+    "mocha": " truffle test --network development ./lib/test/**/*.js ./lib/test/*.js",
     "test": "run-s build mocha",
     "clean": "shx rm -r ./lib"
   },
