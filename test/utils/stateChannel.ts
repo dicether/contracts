@@ -25,8 +25,9 @@ export enum ReasonEnded {
 }
 
 export enum GameType {
-   NO_GAME = 0,
-   DICE = 1
+    NO_GAME = 0,
+    DICE_LOWER = 1,
+    DICE_HIGHER = 2
 }
 
 export const HOUSE_STAKE = new BigNumber('10e18');
@@ -114,7 +115,13 @@ export function calcResultNumber(gameType: number, serverSeed: string, playerSee
     const hexSeed = seed.toString('hex');
     const rand = new BigNumber(hexSeed, 16);
 
-    return rand.mod(new BigNumber(RANGE)).toNumber();
+    switch (gameType) {
+        case GameType.DICE_LOWER:
+        case GameType.DICE_HIGHER:
+            return rand.mod(new BigNumber(RANGE)).toNumber();
+        default:
+            throw Error("Invalid game type!");
+    }
 }
 
 
@@ -123,21 +130,41 @@ export function calcPlayerProfit(gameType: number, betValue: BigNumber, num: num
         // player won
         const betValueGwei = betValue.idiv(new BigNumber('1e9')); // calculate in gwei
 
-        const totalWon = betValueGwei.mul(new BigNumber(RANGE)).idiv(new BigNumber(num));
-        const houseEdge = totalWon.mul(new BigNumber(HOUSE_EDGE)).idiv(new BigNumber(HOUSE_EDGE_DIVISOR));
+        let totalWon = new BigNumber(0);
 
+        switch (gameType) {
+            case GameType.DICE_LOWER:
+                totalWon = betValueGwei.mul(new BigNumber(RANGE)).idiv(new BigNumber(num));
+                break;
+            case GameType.DICE_HIGHER:
+                totalWon = betValueGwei.mul(new BigNumber(RANGE)).idiv(new BigNumber(RANGE - num - 1));
+                break;
+            default:
+                throw Error("Invalid game type!");
+
+        }
+
+        const houseEdge = totalWon.mul(new BigNumber(HOUSE_EDGE)).idiv(new BigNumber(HOUSE_EDGE_DIVISOR));
         return totalWon.sub(houseEdge).sub(betValueGwei).mul(1e9);
     } else {
         return betValue.negated();
     }
 }
 
+export function hasWon(gameType: number, num: number, resultNum: number) {
+    switch (gameType) {
+        case GameType.DICE_LOWER: return resultNum < num;
+        case GameType.DICE_HIGHER: return resultNum > num;
+        default: throw Error("Invalid game type");
+    }
+}
+
 export function calcNewBalance(gameType: number, num: number, betValue: BigNumber, serverSeed: string, playerSeed: string,
                                oldBalance: BigNumber): BigNumber {
     const resultNum = calcResultNumber(gameType, serverSeed, playerSeed);
-
+    const won = hasWon(gameType, num, resultNum);
     // calculated in gwei
-    const profit = calcPlayerProfit(gameType, betValue, num, resultNum < num);
+    const profit = calcPlayerProfit(gameType, betValue, num, won);
 
     return profit.add(oldBalance);
 }
