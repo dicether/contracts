@@ -54,7 +54,6 @@ contract('GameChannelConflict', accounts => {
             contractAddress = gameChannel.address;
             await gameChannel.createGame(phash3, {from: player, value: stake});
             await gameChannel.acceptGame(player, gameId, shash3, {from: server});
-
         });
 
         const defaultData = {
@@ -374,6 +373,7 @@ contract('GameChannelConflict', accounts => {
                     calcNewBalance(d.gameType, d.num, d.value, d.serverSeed, d.playerSeed, d.balance),
                     stake.negated()
                 );
+
                 const payout = stake.add(newBalance);
 
                 expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));

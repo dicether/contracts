@@ -71,8 +71,7 @@ contract GameChannel is GameChannelConflict {
         require(gameId == _gameId);
         require(game.status == GameStatus.WAITING_FOR_SERVER);
 
-        closeGame(game, gameId, playerAddress, ReasonEnded.CANCELLED_BY_PLAYER, 0);
-        payOut(game, playerAddress);
+        closeGame(game, gameId, 0, playerAddress, ReasonEnded.CANCELLED_BY_PLAYER, 0);
     }
 
     /**
@@ -88,8 +87,7 @@ contract GameChannel is GameChannelConflict {
         require(_gameId == gameId);
         require(game.status == GameStatus.WAITING_FOR_SERVER);
 
-        closeGame(game, gameId, _playerAddress, ReasonEnded.REJECTED_BY_SERVER, 0);
-        payOut(game, _playerAddress);
+        closeGame(game, gameId, 0, _playerAddress, ReasonEnded.REJECTED_BY_SERVER, 0);
 
         emit LogGameRejected(_playerAddress, gameId);
     }
@@ -249,7 +247,6 @@ contract GameChannel is GameChannelConflict {
         require(_contractAddress == contractAddress);
         require(game.status == GameStatus.ACTIVE);
 
-        closeGame(game, gameId, _playerAddress, ReasonEnded.REGULAR_ENDED, _balance);
-        payOut(game, _playerAddress);
+        closeGame(game, gameId, _roundId, _playerAddress, ReasonEnded.REGULAR_ENDED, _balance);
     }
 }

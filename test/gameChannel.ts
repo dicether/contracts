@@ -71,12 +71,10 @@ contract('GameChannel', accounts => {
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
-            const stake = game[2];
+            const stake = game[1];
 
             expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.add(MIN_STAKE));
             expect(status).to.equal(2); // waiting for server
-            expect(reasonEnded).to.equal(0); // not ended
             expect(stake).to.be.bignumber.equal(MIN_STAKE);
 
             const activeGames = await gameChannel.activeGames.call();
@@ -110,11 +108,9 @@ contract('GameChannel', accounts => {
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
 
             expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
             expect(status).to.equal(0); // ended
-            expect(reasonEnded).to.equal(4); // cancelled by player
 
             const activeGames = await gameChannel.activeGames.call();
             expect(activeGames).to.be.bignumber.equal(0);
@@ -154,11 +150,9 @@ contract('GameChannel', accounts => {
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
 
             expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
             expect(status).to.equal(0); // ended
-            expect(reasonEnded).to.equal(3); // rejected by server
 
             const activeGames = await gameChannel.activeGames.call();
             expect(activeGames).to.be.bignumber.equal(0);
@@ -194,10 +188,8 @@ contract('GameChannel', accounts => {
             const game = await gameChannel.gameIdGame.call(gameId);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
 
             expect(status).to.equal(1); // active
-            expect(reasonEnded).to.equal(0); // not ended
 
             const activeGames = await gameChannel.activeGames.call();
             expect(activeGames).to.be.bignumber.equal(1);
@@ -322,10 +314,8 @@ contract('GameChannel', accounts => {
             const game = await gameChannel.gameIdGame.call(gameId);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
 
             expect(status).to.equal(0); // active
-            expect(reasonEnded).to.equal(0); // regular ended
             expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).sub(balance));
 
             const activeGames = await gameChannel.activeGames.call();
@@ -448,10 +438,8 @@ contract('GameChannel', accounts => {
             const game = await gameChannel.gameIdGame.call(gameId);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
 
             expect(status).to.equal(0); // active
-            expect(reasonEnded).to.equal(0); // regular ended
             expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).sub(balance));
 
             const activeGames = await gameChannel.activeGames.call();

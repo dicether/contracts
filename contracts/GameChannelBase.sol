@@ -34,9 +34,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         /// @dev Game session status.
         GameStatus status;
 
-        /// @dev Reason game session ended.
-        ReasonEnded reasonEnded;
-
         /// @dev Player's stake.
         uint stake;
 
@@ -142,7 +139,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     event LogServerRequestedEnd(address indexed player, uint indexed gameId);
 
     /// @dev This event is fired when game session is ended.
-    event LogGameEnded(address indexed player, uint indexed gameId, ReasonEnded reason);
+    event LogGameEnded(address indexed player, uint indexed gameId, uint32 roundId, int balance, ReasonEnded reason);
 
     /// @dev this event is fired when owner modifies player's stake limits.
     event LogStakeLimitsModified(uint minStake, uint maxStake);
@@ -295,6 +292,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     function closeGame(
         Game storage _game,
         uint _gameId,
+        uint32 _roundId,
         address _playerAddress,
         ReasonEnded _reason,
         int _balance
@@ -302,38 +300,38 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         internal
     {
         _game.status = GameStatus.ENDED;
-        _game.reasonEnded = _reason;
-        _game.balance = _balance;
 
         assert(activeGames > 0);
         activeGames = activeGames - 1;
 
-        emit LogGameEnded(_playerAddress, _gameId, _reason);
+        payOut(_playerAddress, _game.stake, _balance);
+
+        emit LogGameEnded(_playerAddress, _gameId, _roundId, _balance, _reason);
     }
 
     /**
      * @dev End game by paying out player and server.
-     * @param _game Game session to payout.
      * @param _playerAddress Player's address.
+     * @param _stake Player's stake.
+     * @param _balance Player's balance.
      */
-    function payOut(Game storage _game, address _playerAddress) internal {
-        assert(_game.balance <= conflictRes.maxBalance());
-        assert(_game.status == GameStatus.ENDED);
-        assert(_game.stake <= maxStake);
-        assert((int(_game.stake) + _game.balance) >= 0);
+    function payOut(address _playerAddress, uint _stake, int _balance) internal {
+        assert(_balance <= conflictRes.maxBalance());
+        assert(_stake <= maxStake);
+        assert((int(_stake) + _balance) >= 0);
 
-        uint valuePlayer = uint(int(_game.stake) + _game.balance);
+        uint valuePlayer = uint(int(_stake) + _balance);
 
-        if (_game.balance > 0 && int(houseStake) < _game.balance) {
+        if (_balance > 0 && int(houseStake) < _balance) {
             // Should never happen!
             // House is bankrupt.
             // Payout left money.
             valuePlayer = houseStake;
         }
 
-        houseProfit = houseProfit - _game.balance;
+        houseProfit = houseProfit - _balance;
 
-        int newHouseStake = int(houseStake) - _game.balance;
+        int newHouseStake = int(houseStake) - _balance;
         assert(newHouseStake >= 0);
         houseStake = uint(newHouseStake);
 

@@ -152,10 +152,8 @@ contract('GameChannelConflict', accounts => {
             const game = await gameChannel.gameIdGame.call(gameId);
 
             const status = game[0].toNumber();
-            const reasonEnded = game[1].toNumber();
 
             expect(status).to.equal(3); // player initiated end
-            expect(reasonEnded).to.equal(0); // not ended
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.PLAYER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
 

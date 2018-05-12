@@ -27,10 +27,8 @@ export async function checkGameStatusAsync(gameChannel: any, gameId: number, sta
     // check game session state
     const game = await gameChannel.gameIdGame.call(gameId);
     const status = game[0].toNumber();
-    const reasonEnded = game[1].toNumber();
 
     expect(status).to.equal(statusRef);
-    expect(reasonEnded).to.equal(reasonEndedRef);
 }
 
 export async function checkGameStateAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number,
@@ -39,22 +37,18 @@ export async function checkGameStateAsync(gameChannel: any, gameId: number, stat
     const game = await gameChannel.gameIdGame.call(gameId);
 
     const status = game[0].toNumber();
-    const reasonEnded = game[1].toNumber();
-    const gameType = game[3].toNumber();
-    const roundId = game[4].toNumber();
-    const betNum = game[5].toNumber();
-    const betValue = game[6];
-    const balance = game[7];
-    const playerSeed = game[8];
-    const serverSeed = game[9];
+    const gameType = game[2].toNumber();
+    const roundId = game[3].toNumber();
+    const betNum = game[4].toNumber();
+    const betValue = game[5];
+    const playerSeed = game[7];
+    const serverSeed = game[8];
 
     expect(status).to.equal(statusRef);
-    expect(reasonEnded).to.equal(reasonEndedRef);
     expect(gameType).to.equal(gameTypeRef);
     expect(roundId).to.equal(roundIdRef);
     expect(betNum).to.equal(numRef);
     expect(betValue).to.be.bignumber.equal(betValueRef);
-    expect(balance).to.be.bignumber.equal(balanceRef);
     expect(playerSeed).to.equal(playerSeedRef);
     expect(serverSeed).to.equal(serverSeedRef);
 }

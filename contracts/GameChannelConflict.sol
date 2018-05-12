@@ -168,8 +168,7 @@ contract GameChannelConflict is GameChannelBase {
 
             emit LogPlayerRequestedEnd(msg.sender, gameId);
         } else if (game.status == GameStatus.SERVER_INITIATED_END && game.roundId == 0) {
-            closeGame(game, gameId, playerAddress, ReasonEnded.REGULAR_ENDED, 0);
-            payOut(game, playerAddress);
+            closeGame(game, gameId, 0, playerAddress, ReasonEnded.REGULAR_ENDED, 0);
         } else {
             revert();
         }
@@ -193,8 +192,7 @@ contract GameChannelConflict is GameChannelBase {
 
             emit LogServerRequestedEnd(msg.sender, gameId);
         } else if (game.status == GameStatus.PLAYER_INITIATED_END && game.roundId == 0) {
-            closeGame(game, gameId, _playerAddress, ReasonEnded.REGULAR_ENDED, 0);
-            payOut(game, _playerAddress);
+            closeGame(game, gameId, 0, _playerAddress, ReasonEnded.REGULAR_ENDED, 0);
         } else {
             revert();
         }
@@ -223,8 +221,7 @@ contract GameChannelConflict is GameChannelBase {
             game.endInitiatedTime
         );
 
-        closeGame(game, gameId, _playerAddress, ReasonEnded.END_FORCED_BY_SERVER, newBalance);
-        payOut(game, _playerAddress);
+        closeGame(game, gameId, game.roundId, _playerAddress, ReasonEnded.END_FORCED_BY_SERVER, newBalance);
     }
 
     /**
@@ -248,8 +245,7 @@ contract GameChannelConflict is GameChannelBase {
             game.endInitiatedTime
         );
 
-        closeGame(game, gameId, playerAddress, ReasonEnded.END_FORCED_BY_PLAYER, newBalance);
-        payOut(game, playerAddress);
+        closeGame(game, gameId, game.roundId, playerAddress, ReasonEnded.END_FORCED_BY_PLAYER, newBalance);
     }
 
     /**
@@ -394,7 +390,6 @@ contract GameChannelConflict is GameChannelBase {
             _game.playerSeed
         );
 
-        closeGame(_game, _gameId, _playerAddress, ReasonEnded.REGULAR_ENDED, newBalance);
-        payOut(_game, _playerAddress);
+        closeGame(_game, _gameId, _game.roundId, _playerAddress, ReasonEnded.REGULAR_ENDED, newBalance);
     }
 }
