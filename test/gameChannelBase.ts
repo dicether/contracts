@@ -8,7 +8,7 @@ import {
     PROFIT_TRANSFER_TIMESPAN_MIN, signData,
     WITHDRAW_ALL_TIMEOUT
 } from './utils/stateChannel';
-import {configureChai, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
+import {configureChai, createGame, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
 
 
 configureChai();
@@ -20,7 +20,7 @@ const hash = '0x0000000000000000000000000000000000000000000000000000000000000001
 const PROFIT = MIN_STAKE;
 
 
-const createProfitAsync = async (gameChannel: any, player: string, server: string, profit: BigNumber) => {
+const createProfitAsync = async (gameChannel: any, player: string, server: string, profit: BigNumber,  createBefore?: number) => {
     const contractAddress = gameChannel.address;
     const gameType = 0;
     const num = 0;
@@ -30,9 +30,12 @@ const createProfitAsync = async (gameChannel: any, player: string, server: strin
     const roundId = 10;
     const balance = profit.negated();
 
-    const result = await gameChannel.createGame(hash, {from: player, value: profit.abs()});
+    // const result = await gameChannel.createGame(hash, {from: player, value: profit.abs()});
+    // const gameId = result.logs[0].args.gameId;
+    // await gameChannel.acceptGame(player, gameId, hash, {from: server});
+    const result = await createGame(gameChannel, server, player, hash, hash, profit.abs(), createBefore);
     const gameId = result.logs[0].args.gameId;
-    await gameChannel.acceptGame(player, gameId, hash, {from: server});
+
 
     const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
             contractAddress, player);
@@ -77,7 +80,7 @@ contract('GameChannelBase', accounts => {
             await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
             await gameChannel.transferProfitToHouse({from: notOwner});
 
-            await createProfitAsync(gameChannel, player, server, PROFIT);
+            await createProfitAsync(gameChannel, player, server, PROFIT, PROFIT_TRANSFER_TIMESPAN + Math.floor(Date.now() / 1000) + 120 * 60);
             return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
@@ -151,7 +154,7 @@ contract('GameChannelBase', accounts => {
         });
 
         it('Should fail if below min house stake', async () => {
-            await gameChannel.createGame(hash, {from: player, value: MAX_STAKE});
+            await createGame(gameChannel, server, player, hash, hash, MAX_STAKE);
             return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR)
         });

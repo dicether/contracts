@@ -4,8 +4,8 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MAX_VALUE, MIN_STAKE, MIN_VALUE, signData} from './utils/stateChannel';
-import {configureChai, TRANSACTION_ERROR} from './utils/util';
+import {HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MIN_STAKE, signData, signStartData} from './utils/stateChannel';
+import {configureChai, createGame, TRANSACTION_ERROR} from './utils/util';
 
 
 configureChai();
@@ -41,32 +41,53 @@ contract('GameChannel', accounts => {
     describe('createGame', () => {
         it("Should fail if house stake too low", async () => {
             await gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner});
-            await expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
+
+            return expect(createGame(gameChannel, server, player, hash, hash, MIN_STAKE)).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if value too low", async () => {
-            return expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE.sub(1)})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(createGame(gameChannel, server, player, hash, hash, MIN_STAKE.sub(1))).to.be.rejectedWith(TRANSACTION_ERROR);
+
         });
 
         it("Should fail if value too high", async () => {
-            return expect(gameChannel.createGame(hash, {from: player, value: MAX_STAKE.add(1)})).to.be.rejectedWith(TRANSACTION_ERROR);
-
+            return expect(createGame(gameChannel, server, player, hash, hash, MAX_STAKE.add(1))).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game paused", async () => {
             await gameChannel.pause({from: owner});
-            return expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
-
+            return expect(createGame(gameChannel, server, player, hash, hash, MIN_STAKE)).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game not ended", async () => {
-            await gameChannel.createGame(hash, {from: player, value: MIN_STAKE});
-            return expect(gameChannel.createGame(hash, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
+            await createGame(gameChannel, server, player, hash, hash, MIN_STAKE);
+            return expect(createGame(gameChannel, server, player, hash, hash, MIN_STAKE)).to.be.rejectedWith(TRANSACTION_ERROR);
+        });
+
+        it("Should fail if invalid signature", async () => {
+            const createBefore = Math.round(Date.now() / 1000) + 5 * 60;
+            const sig = signStartData(gameChannel.address, player, 0, createBefore, hash, player);
+
+            return expect(gameChannel.createGame(hash, 0, createBefore, hash, sig, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
+        });
+
+        it("Should fail if invalid create time", async () => {
+            const createBefore = Math.round(Date.now() / 1000);
+            const sig = signStartData(gameChannel.address, server, 0, createBefore, hash, server);
+
+            return expect(gameChannel.createGame(hash, 0, createBefore, hash, sig, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
+        });
+
+        it("Should fail if invalid  game id", async () => {
+            const createBefore = Math.round(Date.now() / 1000);
+            const sig = signStartData(gameChannel.address, server, 1, createBefore, hash, server);
+
+            return expect(gameChannel.createGame(hash, 1, createBefore, hash, sig, {from: player, value: MIN_STAKE})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Create game should succeed", async () => {
             const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-            await gameChannel.createGame(hash, {from: player, value: MIN_STAKE});
+            await createGame(gameChannel, server, player, hash, hash, MIN_STAKE);
             const game = await gameChannel.gameIdGame.call(1);
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
 
@@ -74,7 +95,7 @@ contract('GameChannel', accounts => {
             const stake = game[1];
 
             expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.add(MIN_STAKE));
-            expect(status).to.equal(2); // waiting for server
+            expect(status).to.equal(1); // active
             expect(stake).to.be.bignumber.equal(MIN_STAKE);
 
             const activeGames = await gameChannel.activeGames.call();
@@ -82,119 +103,125 @@ contract('GameChannel', accounts => {
         })
     });
 
-    describe('cancelGame', () => {
-        const gameId = 1;
-        const stake = MIN_STAKE;
-        beforeEach(async () => {
-            await gameChannel.createGame(hash, {from: player, value: stake});
-        });
+    // describe('cancelGame', () => {
+    //     const gameId = 1;
+    //     const stake = MIN_STAKE;
+    //     beforeEach(async () => {
+    //         await gameChannel.createGame(hash, {from: player, value: stake});
+    //     });
+    //
+    //     it("Should fail if wrong sender", async () => {
+    //         return expect(gameChannel.cancelGame(gameId, {from: player2})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail if accepted", async () => {
+    //         await gameChannel.acceptGame(player, gameId, hash, {from: server});
+    //         return expect(gameChannel.cancelGame(gameId, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //
+    //     });
+    //
+    //     it("Cancel game session should succeed", async () => {
+    //         const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+    //
+    //         await gameChannel.cancelGame(gameId, {from: player});
+    //         const game = await gameChannel.gameIdGame.call(gameId);
+    //
+    //         const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+    //
+    //         const status = game[0].toNumber();
+    //         const reasonEnded = game[1].toNumber();
+    //
+    //         expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
+    //         expect(status).to.equal(0); // ended
+    //         expect(reasonEnded).to.equal(4); // cancelled by player
+    //
+    //         const activeGames = await gameChannel.activeGames.call();
+    //         expect(activeGames).to.be.bignumber.equal(0);
+    //     });
+    // });
 
-        it("Should fail if wrong sender", async () => {
-            return expect(gameChannel.cancelGame(gameId, {from: player2})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if accepted", async () => {
-            await gameChannel.acceptGame(player, gameId, hash, {from: server});
-            return expect(gameChannel.cancelGame(gameId, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
-
-        });
-
-        it("Cancel game session should succeed", async () => {
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-
-            await gameChannel.cancelGame(gameId, {from: player});
-            const game = await gameChannel.gameIdGame.call(gameId);
-
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
-
-            const status = game[0].toNumber();
-
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
-            expect(status).to.equal(0); // ended
-
-            const activeGames = await gameChannel.activeGames.call();
-            expect(activeGames).to.be.bignumber.equal(0);
-        });
-    });
-
-    describe('rejectGame', () => {
-        const gameId = 1;
-        const stake = MIN_STAKE;
-        beforeEach(async () => {
-            await gameChannel.createGame(hash, {from: player, value: stake});
-        });
-
-        it("Should fail if already accepted", async () => {
-            await gameChannel.acceptGame(player, gameId, hash, {from: server});
-            return expect(gameChannel.rejectGame(player, gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if wrong game id", async () => {
-            return expect(gameChannel.rejectGame(player, gameId + 1, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if wrong player address", async () => {
-            return expect(gameChannel.rejectGame(player2, gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail not called by server", async () => {
-            return expect(gameChannel.rejectGame(player, gameId, {from: notServer})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Reject should succeed", async () => {
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-
-            await (gameChannel.rejectGame(player, gameId, {from: server}));
-            const game = await gameChannel.gameIdGame.call(gameId);
-
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
-
-            const status = game[0].toNumber();
-
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
-            expect(status).to.equal(0); // ended
-
-            const activeGames = await gameChannel.activeGames.call();
-            expect(activeGames).to.be.bignumber.equal(0);
-        });
-    });
-
-    describe('acceptGame', () => {
-        const gameId = 1;
-        const stake = MIN_STAKE;
-        beforeEach(async () => {
-            await gameChannel.createGame(hash, {from: player, value: stake});
-        });
-
-        it("Should fail if wrong sender", async () => {
-            return expect(gameChannel.acceptGame(player, gameId, hash, {from: notServer})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if already accepted", async () => {
-            await gameChannel.acceptGame(player, gameId, hash, {from: server});
-            return expect(gameChannel.acceptGame(player, gameId, hash, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if wrong player address", async () => {
-            return expect(gameChannel.acceptGame(player2, gameId, hash, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if wrong gameId", async () => {
-            return expect(gameChannel.acceptGame(player, gameId + 1, hash, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Accept should succeed", async () => {
-            await gameChannel.acceptGame(player, gameId, hash, {from: server});
-            const game = await gameChannel.gameIdGame.call(gameId);
-
-            const status = game[0].toNumber();
-
-            expect(status).to.equal(1); // active
-
-            const activeGames = await gameChannel.activeGames.call();
-            expect(activeGames).to.be.bignumber.equal(1);
-        });
-    });
+    // describe('rejectGame', () => {
+    //     const gameId = 1;
+    //     const stake = MIN_STAKE;
+    //     beforeEach(async () => {
+    //         await gameChannel.createGame(hash, {from: player, value: stake});
+    //     });
+    //
+    //     it("Should fail if already accepted", async () => {
+    //         await gameChannel.acceptGame(player, gameId, hash, {from: server});
+    //         return expect(gameChannel.rejectGame(player, gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail if wrong game id", async () => {
+    //         return expect(gameChannel.rejectGame(player, gameId + 1, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail if wrong player address", async () => {
+    //         return expect(gameChannel.rejectGame(player2, gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail not called by server", async () => {
+    //         return expect(gameChannel.rejectGame(player, gameId, {from: notServer})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Reject should succeed", async () => {
+    //         const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+    //
+    //         await (gameChannel.rejectGame(player, gameId, {from: server}));
+    //         const game = await gameChannel.gameIdGame.call(gameId);
+    //
+    //         const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+    //
+    //         const status = game[0].toNumber();
+    //         const reasonEnded = game[1].toNumber();
+    //
+    //         expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
+    //         expect(status).to.equal(0); // ended
+    //         expect(reasonEnded).to.equal(3); // rejected by server
+    //
+    //         const activeGames = await gameChannel.activeGames.call();
+    //         expect(activeGames).to.be.bignumber.equal(0);
+    //     });
+    // });
+    //
+    // describe('acceptGame', () => {
+    //     const gameId = 1;
+    //     const stake = MIN_STAKE;
+    //     beforeEach(async () => {
+    //         await gameChannel.createGame(hash, {from: player, value: stake});
+    //     });
+    //
+    //     it("Should fail if wrong sender", async () => {
+    //         return expect(gameChannel.acceptGame(player, gameId, hash, {from: notServer})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail if already accepted", async () => {
+    //         await gameChannel.acceptGame(player, gameId, hash, {from: server});
+    //         return expect(gameChannel.acceptGame(player, gameId, hash, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail if wrong player address", async () => {
+    //         return expect(gameChannel.acceptGame(player2, gameId, hash, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Should fail if wrong gameId", async () => {
+    //         return expect(gameChannel.acceptGame(player, gameId + 1, hash, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+    //     });
+    //
+    //     it("Accept should succeed", async () => {
+    //         await gameChannel.acceptGame(player, gameId, hash, {from: server});
+    //         const game = await gameChannel.gameIdGame.call(gameId);
+    //
+    //         const status = game[0].toNumber();
+    //         const reasonEnded = game[1].toNumber();
+    //
+    //         expect(status).to.equal(1); // active
+    //         expect(reasonEnded).to.equal(0); // not ended
+    //
+    //         const activeGames = await gameChannel.activeGames.call();
+    //         expect(activeGames).to.be.bignumber.equal(1);
+    //     });
+    // });
 
     describe('serverEndGame', () => {
         const gameId = 1;
@@ -211,8 +238,9 @@ contract('GameChannel', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.createGame(hash, {from: player, value: stake});
-            await gameChannel.acceptGame(player, gameId, hash, {from: server});
+            // await gameChannel.createGame(hash, {from: player, value: stake});
+            // await gameChannel.acceptGame(player, gameId, hash, {from: server});
+            await createGame(gameChannel, server, player, hash, hash, stake);
 
         });
 
@@ -277,8 +305,9 @@ contract('GameChannel', accounts => {
         it("Should fail if invalid game id", async () => {
             // tslint:disable-next-line:no-shadowed-variable
             const gameId = 2;
-            await gameChannel.createGame(hash, {from: player2, value: stake});
-            await gameChannel.acceptGame(player2, gameId, hash, {from: server});
+            // await gameChannel.createGame(hash, {from: player2, value: stake});
+            // await gameChannel.acceptGame(player2, gameId, hash, {from: server});
+            await createGame(gameChannel, server, player2, hash, hash, stake);
 
             const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
                 gameChannel.address, player);
@@ -338,8 +367,9 @@ contract('GameChannel', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.createGame(hash, {from: player, value: stake});
-            await gameChannel.acceptGame(player, gameId, hash, {from: server});
+            // await gameChannel.createGame(hash, {from: player, value: stake});
+            // await gameChannel.acceptGame(player, gameId, hash, {from: server});
+            await createGame(gameChannel, server, player, hash, hash, stake);
 
         });
 
@@ -401,8 +431,9 @@ contract('GameChannel', accounts => {
         it("Should fail if invalid game id", async () => {
             // tslint:disable-next-line:no-shadowed-variable
             const gameId = 2;
-            await gameChannel.createGame(hash, {from: player2, value: stake});
-            await gameChannel.acceptGame(player2, gameId, hash, {from: server});
+            // await gameChannel.createGame(hash, {from: player2, value: stake});
+            // await gameChannel.acceptGame(player2, gameId, hash, {from: server});
+            await createGame(gameChannel, server, player2, hash, hash, stake);
 
             const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
                 gameChannel.address, server);

@@ -5,6 +5,12 @@ declare module 'eth-sig-util' {
 
     type Recover = {data: Data, sig: string};
     export function recoverTypedData(rec: Recover): string;
+
+    export function concatSig(v: number, r: Buffer, s: Buffer): string;
+}
+
+declare module 'ethereumjs-abi' {
+    export function soliditySHA3(types: string[], data: any[]): Buffer
 }
 
 declare module 'leche' {

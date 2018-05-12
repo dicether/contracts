@@ -11,7 +11,7 @@ import {
     calcNewBalance, GameStatus, GameType, MAX_BALANCE, MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, ReasonEnded,
     SERVER_TIMEOUT, signData
 } from '../utils/stateChannel';
-import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
+import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
@@ -52,8 +52,10 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.createGame(phash3, {from: player, value: stake});
-            await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            // await gameChannel.createGame(phash3, {from: player, value: stake});
+            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            await createGame(gameChannel, server, player, shash3, phash3, stake);
+
         });
 
         const defaultData = {
@@ -147,8 +149,9 @@ contract('GameChannelConflict', accounts => {
                 },
             }, (d: typeof defaultData) => {
                 it("Should fail", async () => {
-                    await gameChannel.createGame(phash3, {from: player2, value: stake});
-                    await gameChannel.acceptGame(player2, 2, shash3, {from: server});
+                    // await gameChannel.createGame(phash3, {from: player2, value: stake});
+                    // await gameChannel.acceptGame(player2, 2, shash3, {from: server});
+                    await createGame(gameChannel, server, player2, shash3, phash3, stake);
                     const playerSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                         d.playerHash, d.gameId, d.contractAddress(), d.signer);
 
@@ -393,9 +396,9 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.createGame(phash3, {from: player, value: stake});
-            await gameChannel.acceptGame(player, gameId, shash3, {from: server});
-
+            // await gameChannel.createGame(phash3, {from: player, value: stake});
+            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            await createGame(gameChannel, server, player, shash3, phash3, stake);
         });
 
         const defaultData = {

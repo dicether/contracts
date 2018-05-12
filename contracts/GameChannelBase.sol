@@ -16,7 +16,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     enum GameStatus {
         ENDED, ///< @dev Game session is ended.
         ACTIVE, ///< @dev Game session is active.
-        WAITING_FOR_SERVER, ///< @dev Waiting for server to accept game session.
         PLAYER_INITIATED_END, ///< @dev Player initiated non regular end.
         SERVER_INITIATED_END ///< @dev Server initiated non regular end.
     }
@@ -25,9 +24,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     enum ReasonEnded {
         REGULAR_ENDED, ///< @dev Game session is regularly ended.
         END_FORCED_BY_SERVER, ///< @dev Player did not respond. Server forced end.
-        END_FORCED_BY_PLAYER, ///< @dev Server did not respond. Player forced end.
-        REJECTED_BY_SERVER, ///< @dev Server rejected game session.
-        CANCELLED_BY_PLAYER ///< @dev Player canceled game session before server accepted it.
+        END_FORCED_BY_PLAYER ///< @dev Server did not respond. Player forced end.
     }
 
     struct Game {
@@ -124,13 +121,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     }
 
     /// @dev This event is fired when player creates game session.
-    event LogGameCreated(address indexed player, uint indexed gameId, uint stake, bytes32 endHash);
-
-    /// @dev This event is fired when server rejects player's game.
-    event LogGameRejected(address indexed player, uint indexed gameId);
-
-    /// @dev This event is fired when server accepts player's game.
-    event LogGameAccepted(address indexed player, uint indexed gameId, bytes32 endHash);
+    event LogGameCreated(address indexed player, uint indexed gameId, uint stake, bytes32 serverEndHash, bytes32 playerEndHash);
 
     /// @dev This event is fired when player requests conflict end.
     event LogPlayerRequestedEnd(address indexed player, uint indexed gameId);
@@ -444,7 +435,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         bytes _sig,
         address _address
     )
-        private
+        internal
         pure
     {
         bytes32 r;

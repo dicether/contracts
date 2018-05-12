@@ -11,7 +11,7 @@ import {
     calcNewBalance, GameStatus, GameType, MAX_BALANCE, MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, ReasonEnded,
     SERVER_TIMEOUT, signData
 } from '../utils/stateChannel';
-import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
+import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
@@ -51,8 +51,9 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.createGame(phash3, {from: player, value: stake});
-            await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            // await gameChannel.createGame(phash3, {from: player, value: stake});
+            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            await createGame(gameChannel, server, player, shash3, phash3, stake);
 
         });
 
@@ -210,8 +211,9 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await gameChannel.createGame(phash3, {from: player, value: stake});
-            await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            // await gameChannel.createGame(phash3, {from: player, value: stake});
+            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
+            await createGame(gameChannel, server, player, shash3, phash3, stake);
 
         });
 

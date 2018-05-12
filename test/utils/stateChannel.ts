@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import * as ethAbi from 'ethereumjs-abi';
 import * as ethSigUtil from 'eth-sig-util';
 import * as ethUtil from 'ethereumjs-util';
 
@@ -11,17 +12,14 @@ export const WITHDRAW_ALL_TIMEOUT = 3 * 24 * 60 * 60; // in seconds
 export enum GameStatus {
     ENDED = 0,
     ACTIVE = 1,
-    WAITING_FOR_SERVER = 2,
-    PLAYER_INITIATED_END = 3,
-    SERVER_INITIATED_END = 4
+    PLAYER_INITIATED_END = 2,
+    SERVER_INITIATED_END = 3
 }
 
 export enum ReasonEnded {
     REGULAR_ENDED = 0,
     END_FORCED_BY_SERVER = 1,
     END_FORCED_BY_PLAYER = 2,
-    REJECTED_BY_SERVER = 3,
-    CANCELLED_BY_PLAYER = 4
 }
 
 export enum GameType {
@@ -168,6 +166,28 @@ export function calcNewBalance(gameType: number, num: number, betValue: BigNumbe
 
     return profit.add(oldBalance);
 }
+
+export function signStartData(contractAddress: string,
+                              player: string,
+                              lastGameId: number,
+                              createBefore: number,
+                              serverEndHash: string,
+                              serverAccount: string): string {
+    const hash = ethAbi.soliditySHA3(
+        ['address', 'address', 'uint', 'uint', 'bytes32'],
+        [contractAddress, player, lastGameId, createBefore, ethUtil.toBuffer(serverEndHash)]
+    );
+
+    if (!(serverAccount in publicPrivateKeyMap)) {
+        throw Error("Invalid account! You need to run ganache with --mnemonic \"test\"");
+    }
+
+    const privKey = publicPrivateKeyMap[serverAccount];
+
+    const sig = ethUtil.ecsign(hash, ethUtil.toBuffer(privKey));
+    return ethSigUtil.concatSig(sig.v, sig.r, sig.s);
+}
+
 
 export function signData(roundId: number, gameType: number, num: number, value: BigNumber, balance: BigNumber,
                          serverHash: string, playerHash: string, gameId: number, contractAddress: string,

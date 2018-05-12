@@ -4,6 +4,7 @@ import * as ChaiAsPromised from 'chai-as-promised';
 import * as ChaiBigNumber from 'chai-bignumber';
 import {promisify} from "util";
 import * as Web3 from 'web3';
+import {signStartData} from "./stateChannel";
 
 
 BigNumber.prototype.idiv = function(divider) {
@@ -32,6 +33,21 @@ export function configureChai() {
     chai.config.includeStack = true;
     chai.use(ChaiBigNumber());
     chai.use(ChaiAsPromised);
+}
+
+export async function createGame(contract: any,
+                                 serverAddress: string,
+                                 playerAddress: string,
+                                 serverEndHash: string,
+                                 playerEndHash: string,
+                                 playerStake: BigNumber,
+                                 createBefore: number =  Math.floor(Date.now() / 1000) + 120 * 60) {
+    const lastGameId = (await contract.playerGameId.call(playerAddress)).toNumber();
+
+    const sig = signStartData(contract.address, playerAddress, lastGameId, createBefore, serverEndHash, serverAddress);
+
+    return contract.createGame(playerEndHash, lastGameId, createBefore, serverEndHash, sig, {from: playerAddress, value: playerStake});
+
 }
 
 export const TRANSACTION_ERROR = 'VM Exception';
