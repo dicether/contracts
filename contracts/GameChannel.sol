@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 import "./GameChannelConflict.sol";
 
@@ -16,7 +16,7 @@ contract GameChannel is GameChannelConflict {
      * @param _conflictResAddress Conflict resolution contract address.
      * @param _houseAddress House address to move profit to.
      */
-    function GameChannel(
+    constructor(
         address _serverAddress,
         uint _minStake,
         uint _maxStake,
@@ -56,7 +56,7 @@ contract GameChannel is GameChannelConflict {
 
         activeGames = activeGames + 1;
 
-        LogGameCreated(playerAddress, gameId, msg.value, _endHash);
+        emit LogGameCreated(playerAddress, gameId, msg.value, _endHash);
     }
 
     /**
@@ -91,7 +91,7 @@ contract GameChannel is GameChannelConflict {
         closeGame(game, gameId, _playerAddress, ReasonEnded.REJECTED_BY_SERVER, 0);
         payOut(game, _playerAddress);
 
-        LogGameRejected(_playerAddress, gameId);
+        emit LogGameRejected(_playerAddress, gameId);
     }
 
     /**
@@ -113,7 +113,7 @@ contract GameChannel is GameChannelConflict {
 
         game.status = GameStatus.ACTIVE;
 
-        LogGameAccepted(_playerAddress, gameId, _endHash);
+        emit LogGameAccepted(_playerAddress, gameId, _endHash);
     }
 
     /**

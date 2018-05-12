@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 import "./Ownable.sol";
 
@@ -45,7 +45,7 @@ contract Pausable is Ownable {
     function pause() public onlyOwner onlyNotPaused {
         paused = true;
         timePaused = block.timestamp;
-        LogPause();
+        emit LogPause();
     }
 
     /**
@@ -54,6 +54,6 @@ contract Pausable is Ownable {
     function unpause() public onlyOwner onlyPaused {
         paused = false;
         timePaused = 0;
-        LogUnpause();
+        emit LogUnpause();
     }
 }

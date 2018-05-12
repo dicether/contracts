@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 import "./GameChannelBase.sol";
 
@@ -17,7 +17,7 @@ contract GameChannelConflict is GameChannelBase {
      * @param _conflictResAddress Conflict resolution contract address
      * @param _houseAddress House address to move profit to
      */
-    function GameChannelConflict(
+    constructor(
         address _serverAddress,
         uint _minStake,
         uint _maxStake,
@@ -166,7 +166,7 @@ contract GameChannelConflict is GameChannelBase {
             game.endInitiatedTime = block.timestamp;
             game.status = GameStatus.PLAYER_INITIATED_END;
 
-            LogPlayerRequestedEnd(msg.sender, gameId);
+            emit LogPlayerRequestedEnd(msg.sender, gameId);
         } else if (game.status == GameStatus.SERVER_INITIATED_END && game.roundId == 0) {
             closeGame(game, gameId, playerAddress, ReasonEnded.REGULAR_ENDED, 0);
             payOut(game, playerAddress);
@@ -191,7 +191,7 @@ contract GameChannelConflict is GameChannelBase {
             game.endInitiatedTime = block.timestamp;
             game.status = GameStatus.SERVER_INITIATED_END;
 
-            LogServerRequestedEnd(msg.sender, gameId);
+            emit LogServerRequestedEnd(msg.sender, gameId);
         } else if (game.status == GameStatus.PLAYER_INITIATED_END && game.roundId == 0) {
             closeGame(game, gameId, _playerAddress, ReasonEnded.REGULAR_ENDED, 0);
             payOut(game, _playerAddress);
@@ -306,7 +306,7 @@ contract GameChannelConflict is GameChannelBase {
             game.playerSeed = _playerSeed;
             game.serverSeed = bytes32(0);
 
-            LogPlayerRequestedEnd(msg.sender, gameId);
+            emit LogPlayerRequestedEnd(msg.sender, gameId);
         } else {
             revert();
         }
@@ -371,7 +371,7 @@ contract GameChannelConflict is GameChannelBase {
             game.serverSeed = _serverSeed;
             game.playerSeed = _playerSeed;
 
-            LogServerRequestedEnd(_playerAddress, gameId);
+            emit LogServerRequestedEnd(_playerAddress, gameId);
         } else {
             revert();
         }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 
 /**
@@ -22,7 +22,7 @@ contract Ownable {
     /**
      * @dev Set contract creator as initial owner
      */
-    function Ownable() public {
+    constructor() public {
         owner = msg.sender;
     }
 
@@ -33,7 +33,7 @@ contract Ownable {
      */
     function setOwner(address _newOwner) public onlyOwner {
         require(_newOwner != address(0));
-        LogOwnerShipTransferred(owner, _newOwner);
+        emit LogOwnerShipTransferred(owner, _newOwner);
         owner = _newOwner;
     }
 }

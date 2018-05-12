@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 import "./ConflictResolutionInterface.sol";
 import "./Ownable.sol";
@@ -34,7 +34,7 @@ contract ConflictResolutionManager is Ownable {
      * @dev Constructor
      * @param _conflictResAddress conflict resolution contract address.
      */
-    function ConflictResolutionManager(address _conflictResAddress) public {
+    constructor(address _conflictResAddress) public {
         conflictRes = ConflictResolutionInterface(_conflictResAddress);
     }
 
@@ -46,7 +46,7 @@ contract ConflictResolutionManager is Ownable {
         newConflictRes = _newConflictResAddress;
         updateTime = block.timestamp;
 
-        LogUpdatingConflictResolution(_newConflictResAddress);
+        emit LogUpdatingConflictResolution(_newConflictResAddress);
     }
 
     /**
@@ -61,6 +61,6 @@ contract ConflictResolutionManager is Ownable {
         newConflictRes = 0;
         updateTime = 0;
 
-        LogUpdatedConflictResolution(newConflictRes);
+        emit LogUpdatedConflictResolution(newConflictRes);
     }
 }

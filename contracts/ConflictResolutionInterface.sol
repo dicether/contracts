@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 
 /**
@@ -9,11 +9,11 @@ pragma solidity ^0.4.18;
  * @author dicether
  */
 interface ConflictResolutionInterface {
-    function minHouseStake(uint activeGames) public pure returns(uint);
+    function minHouseStake(uint activeGames) external pure returns(uint);
 
-    function maxBalance() public pure returns(int);
+    function maxBalance() external pure returns(int);
 
-    function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) public pure returns(bool);
+    function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) external pure returns(bool);
 
     function endGameConflict(
         uint8 _gameType,
@@ -24,7 +24,7 @@ interface ConflictResolutionInterface {
         bytes32 _serverSeed,
         bytes32 _playerSeed
     )
-        public
+        external
         view
         returns(int);
 
@@ -36,7 +36,7 @@ interface ConflictResolutionInterface {
         uint _stake,
         uint _endInitiatedTime
     )
-        public
+        external
         view
         returns(int);
 
@@ -48,7 +48,7 @@ interface ConflictResolutionInterface {
         uint _stake,
         uint _endInitiatedTime
     )
-        public
+        external
         view
         returns(int);
 }

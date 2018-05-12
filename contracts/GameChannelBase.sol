@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
 import "./ConflictResolutionInterface.sol";
 import "./ConflictResolutionManager.sol";
@@ -155,7 +155,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _conflictResAddress Conflict resolution contract address.
      * @param _houseAddress House address to move profit to.
      */
-    function GameChannelBase(
+    constructor(
         address _serverAddress,
         uint _minStake,
         uint _maxStake,
@@ -281,7 +281,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         require(_minStake > 0 && _minStake <= _maxStake);
         minStake = _minStake;
         maxStake = _maxStake;
-        LogStakeLimitsModified(minStake, maxStake);
+        emit LogStakeLimitsModified(minStake, maxStake);
     }
 
     /**
@@ -308,7 +308,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         assert(activeGames > 0);
         activeGames = activeGames - 1;
 
-        LogGameEnded(_playerAddress, _gameId, _reason);
+        emit LogGameEnded(_playerAddress, _gameId, _reason);
     }
 
     /**
@@ -449,7 +449,11 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         private
         pure
     {
-        var (r, s, v) = signatureSplit(_sig);
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        (r, s, v) = signatureSplit(_sig);
         address addressRecover = ecrecover(_hash, v, r, s);
         require(addressRecover == _address);
     }
