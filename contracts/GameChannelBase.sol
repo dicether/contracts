@@ -121,7 +121,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     }
 
     /// @dev This event is fired when player creates game session.
-    event LogGameCreated(address indexed player, uint indexed gameId, uint stake, bytes32 serverEndHash, bytes32 playerEndHash);
+    event LogGameCreated(address indexed player, uint indexed gameId, uint stake, bytes32 indexed serverEndHash, bytes32 playerEndHash);
 
     /// @dev This event is fired when player requests conflict end.
     event LogPlayerRequestedEnd(address indexed player, uint indexed gameId);
