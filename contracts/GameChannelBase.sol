@@ -52,6 +52,18 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev Maximal time span between profit transfer.
     uint public constant MAX_TRANSFER_TIMSPAN = 6 * 30 days;
 
+    bytes32 public constant TYPE_HASH = keccak256(
+        "uint32 Round Id",
+        "uint8 Game Type",
+        "uint16 Number",
+        "uint Value (Wei)",
+        "int Current Balance (Wei)",
+        "bytes32 Server Hash",
+        "bytes32 Player Hash",
+        "uint Game Id",
+        "address Contract Address"
+    );
+
     /// @dev Current active game sessions.
     uint public activeGames = 0;
 
@@ -82,8 +94,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
 
     /// @dev Last time profit transferred to house.
     uint public lastProfitTransferTimestamp;
-
-    bytes32 public typeHash;
 
     /// @dev Maps gameId to game struct.
     mapping (uint => Game) public gameIdGame;
@@ -163,18 +173,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         lastProfitTransferTimestamp = block.timestamp;
         minStake = _minStake;
         maxStake = _maxStake;
-
-        typeHash = keccak256(
-            "uint32 Round Id",
-            "uint8 Game Type",
-            "uint16 Number",
-            "uint Value (Wei)",
-            "int Current Balance (Wei)",
-            "bytes32 Server Hash",
-            "bytes32 Player Hash",
-            "uint Game Id",
-            "address Contract Address"
-        );
     }
 
     /**
@@ -421,7 +419,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             _contractAddress
         );
 
-        return keccak256(typeHash, dataHash);
+        return keccak256(TYPE_HASH, dataHash);
     }
 
      /**
