@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./GameChannelBase.sol";
 
@@ -281,7 +281,7 @@ contract GameChannelConflict is GameChannelBase {
 
         require(gameId == _gameId);
         require(_roundId > 0);
-        require(keccak256(_playerSeed) == _playerHash);
+        require(keccak256(abi.encodePacked(_playerSeed)) == _playerHash);
         require(_value <= game.stake);
         require(-int(game.stake) <= _balance && _balance <= maxBalance); // save to cast as ranges are fixed
         require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
@@ -344,8 +344,8 @@ contract GameChannelConflict is GameChannelBase {
 
         require(gameId == _gameId);
         require(_roundId > 0);
-        require(keccak256(_serverSeed) == _serverHash);
-        require(keccak256(_playerSeed) == _playerHash);
+        require(keccak256(abi.encodePacked(_serverSeed)) == _serverHash);
+        require(keccak256(abi.encodePacked(_playerSeed)) == _playerHash);
         require(_value <= game.stake);
         require(-int(game.stake) <= _balance && _balance <= maxBalance); // save to cast as ranges are fixed
         require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed

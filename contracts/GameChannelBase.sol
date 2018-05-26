@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./ConflictResolutionInterface.sol";
 import "./ConflictResolutionManager.sol";
@@ -52,7 +52,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev Maximal time span between profit transfer.
     uint public constant MAX_TRANSFER_TIMSPAN = 6 * 30 days;
 
-    bytes32 public constant TYPE_HASH = keccak256(
+    bytes32 public constant TYPE_HASH = keccak256(abi.encodePacked(
         "uint32 Round Id",
         "uint8 Game Type",
         "uint16 Number",
@@ -62,7 +62,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         "bytes32 Player Hash",
         "uint Game Id",
         "address Contract Address"
-    );
+     ));
 
     /// @dev Current active game sessions.
     uint public activeGames = 0;
@@ -404,10 +404,10 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         address _contractAddress
     )
         private
-        view
+        pure
         returns(bytes32)
     {
-        bytes32 dataHash = keccak256(
+        bytes32 dataHash = keccak256(abi.encodePacked(
             _roundId,
             _gameType,
             _num,
@@ -417,9 +417,12 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             _playerHash,
             _gameId,
             _contractAddress
-        );
+        ));
 
-        return keccak256(TYPE_HASH, dataHash);
+        return keccak256(abi.encodePacked(
+            TYPE_HASH,
+            dataHash
+        ));
     }
 
      /**

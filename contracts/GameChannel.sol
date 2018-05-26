@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./GameChannelConflict.sol";
 
@@ -187,7 +187,9 @@ contract GameChannel is GameChannelConflict {
         private view
     {
         address contractAddress = this;
-        bytes32 hash = keccak256(contractAddress, _playerAddress, _previousGameId, _createBefore, _serverEndHash);
+        bytes32 hash = keccak256(abi.encodePacked(
+            contractAddress, _playerAddress, _previousGameId, _createBefore, _serverEndHash
+        ));
 
         verify(hash, _serverSig, serverAddress);
     }
