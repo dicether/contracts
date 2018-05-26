@@ -30,9 +30,6 @@ const createProfitAsync = async (gameChannel: any, player: string, server: strin
     const roundId = 10;
     const balance = profit.negated();
 
-    // const result = await gameChannel.createGame(hash, {from: player, value: profit.abs()});
-    // const gameId = result.logs[0].args.gameId;
-    // await gameChannel.acceptGame(player, gameId, hash, {from: server});
     const result = await createGame(gameChannel, server, player, hash, hash, profit.abs(), createBefore);
     const gameId = result.logs[0].args.gameId;
 
@@ -96,10 +93,6 @@ contract('GameChannelBase', accounts => {
 
             expect(newBalance).to.be.bignumber.equal(prevBalance);
         });
-
-        // it("Should fail if house stake too low!", async () => {
-        //
-        // });
 
         it("Should succeed!", async () => {
             const profit = PROFIT;

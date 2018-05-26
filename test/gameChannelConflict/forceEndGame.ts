@@ -1,17 +1,30 @@
-import { ZERO_SEED,
-    checkActiveGamesAsync, checkGameStateAsync, checkGameStatusAsync, BET_VALUE,
-    phash1, phash2, phash3, shash1,  shash2, shash3
-} from "./util";
 import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {
-    calcNewBalance, GameStatus, GameType, MAX_BALANCE, MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, ReasonEnded,
-    SERVER_TIMEOUT, signData
+    calcNewBalance,
+    GameStatus,
+    MAX_STAKE,
+    NOT_ENDED_FINE,
+    PLAYER_TIMEOUT,
+    ReasonEnded,
+    SERVER_TIMEOUT,
+    signData
 } from '../utils/stateChannel';
 import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
+import {
+    BET_VALUE,
+    checkActiveGamesAsync,
+    checkGameStatusAsync,
+    phash1,
+    phash2,
+    phash3,
+    shash1,
+    shash2,
+    shash3
+} from "./util";
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
@@ -25,7 +38,6 @@ const withData = leche.withData;
 contract('GameChannelConflict-ForceEnd', accounts => {
     const server = accounts[1];
     const player = accounts[2];
-    const player2 = accounts[3];
 
     const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
     let gameChannel: any;
@@ -51,8 +63,6 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            // await gameChannel.createGame(phash3, {from: player, value: stake});
-            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
             await createGame(gameChannel, server, player, shash3, phash3, stake);
 
         });
@@ -211,8 +221,6 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            // await gameChannel.createGame(phash3, {from: player, value: stake});
-            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
             await createGame(gameChannel, server, player, shash3, phash3, stake);
 
         });
@@ -299,7 +307,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             }, (d: typeof defaultData)  => {
 
             it("should succeed", async () => {
-                const d = defaultData;
+                const d = defaultData; // tslint:disable-line:no-shadowed-variable
                 const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.playerHash, d.gameId, d.contractAddress(), d.signer);
 

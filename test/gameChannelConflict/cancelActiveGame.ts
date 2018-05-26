@@ -1,25 +1,15 @@
-import { ZERO_SEED,
-    checkActiveGamesAsync, checkGameStateAsync, checkGameStatusAsync, BET_VALUE,
-    phash1, phash2, phash3, shash1,  shash2, shash3
-} from "./util";
-import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
-import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {
-    calcNewBalance, GameStatus, GameType, MAX_BALANCE, MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, ReasonEnded,
-    SERVER_TIMEOUT, signData
-} from '../utils/stateChannel';
-import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
+import {GameStatus, MAX_STAKE, ReasonEnded} from '../utils/stateChannel';
+import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
+import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
 
 configureChai();
 const expect = chai.expect;
-
-const withData = leche.withData;
 
 
 contract('GameChannelConflict', accounts => {
@@ -36,7 +26,6 @@ contract('GameChannelConflict', accounts => {
 
     beforeEach(async () => {
         await blockchainLifecycle.takeSnapshotAsync();
-        // gameChannel = await GameChannel.new();
     });
 
     afterEach(async () => {
@@ -50,14 +39,10 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             await createGame(gameChannel, server, player, shash3, phash3, stake);
-            // await gameChannel.createGame(phash3, {from: player, value: stake});
-            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
 
         });
 
         it("Should fail if wrong gameId", async () => {
-            // await gameChannel.createGame(phash3, {from: player2, value: stake});
-            // await gameChannel.acceptGame(player2, 2, shash3, {from: server});
             await createGame(gameChannel, server, player2, shash3, phash3, stake);
 
             return expect(gameChannel.serverCancelActiveGame(player, 2, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
@@ -70,8 +55,6 @@ contract('GameChannelConflict', accounts => {
         });
 
         it("Should fail if wrong player address", async () => {
-            // await gameChannel.createGame(phash3, {from: player2, value: stake});
-            // await gameChannel.acceptGame(player2, 2, shash3, {from: server});
             await createGame(gameChannel, server, player2, shash3, phash3, stake);
 
             return expect(gameChannel.serverCancelActiveGame(player2, 1, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
@@ -112,13 +95,10 @@ contract('GameChannelConflict', accounts => {
 
         beforeEach(async () => {
             await createGame(gameChannel, server, player, shash3, phash3, stake);
-            // await gameChannel.createGame(phash3, {from: player, value: stake});
-            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
         });
 
         it("Should fail if wrong gameId", async () => {
             await gameChannel.playerCancelActiveGame(gameId, {from: player});
-            const game = await gameChannel.gameIdGame.call(gameId);
 
             return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
@@ -153,9 +133,6 @@ contract('GameChannelConflict', accounts => {
 
         it("Should succeed", async () => {
             await gameChannel.playerCancelActiveGame(gameId, {from: player});
-            const game = await gameChannel.gameIdGame.call(gameId);
-
-            const status = game[0].toNumber();
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.PLAYER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
 

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
-import * as ethAbi from 'ethereumjs-abi';
 import * as ethSigUtil from 'eth-sig-util';
+import * as ethAbi from 'ethereumjs-abi';
 import * as ethUtil from 'ethereumjs-util';
 
 

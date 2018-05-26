@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "lint": "tslint --project .",
     "compile": "truffle compile",
     "migrate": "truffle migrate --network development",
     "mocha": " truffle test --network development ./lib/test/**/*.js ./lib/test/*.js",

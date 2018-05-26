@@ -1,6 +1,7 @@
-import {MAX_VALUE} from "../utils/stateChannel";
 import BigNumber from "bignumber.js";
 import * as chai from "chai";
+
+import {MAX_VALUE} from "../utils/stateChannel";
 
 
 const expect = chai.expect;

@@ -1,17 +1,31 @@
-import { ZERO_SEED,
-    checkActiveGamesAsync, checkGameStateAsync, checkGameStatusAsync, BET_VALUE,
-    phash1, phash2, phash3, shash1,  shash2, shash3
-} from "./util";
 import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
+
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {
-    calcNewBalance, GameStatus, GameType, MAX_BALANCE, MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, ReasonEnded,
-    SERVER_TIMEOUT, signData
+    calcNewBalance,
+    GameStatus,
+    GameType,
+    MAX_BALANCE,
+    MAX_STAKE,
+    ReasonEnded,
+    signData
 } from '../utils/stateChannel';
-import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
+import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
+import {
+    BET_VALUE,
+    checkGameStateAsync,
+    checkGameStatusAsync,
+    phash1,
+    phash2,
+    phash3,
+    shash1,
+    shash2,
+    shash3,
+    ZERO_SEED
+} from "./util";
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
@@ -36,7 +50,6 @@ contract('GameChannelConflict', accounts => {
 
     beforeEach(async () => {
         await blockchainLifecycle.takeSnapshotAsync();
-        // gameChannel = await GameChannel.new();
     });
 
     afterEach(async () => {
@@ -45,15 +58,12 @@ contract('GameChannelConflict', accounts => {
 
 
     describe('serverEndConflict', () => {
-        const gameId = 1;
         const stake = MAX_STAKE;
 
         let contractAddress: string;
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            // await gameChannel.createGame(phash3, {from: player, value: stake});
-            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
             await createGame(gameChannel, server, player, shash3, phash3, stake);
 
         });
@@ -149,8 +159,6 @@ contract('GameChannelConflict', accounts => {
                 },
             }, (d: typeof defaultData) => {
                 it("Should fail", async () => {
-                    // await gameChannel.createGame(phash3, {from: player2, value: stake});
-                    // await gameChannel.acceptGame(player2, 2, shash3, {from: server});
                     await createGame(gameChannel, server, player2, shash3, phash3, stake);
                     const playerSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                         d.playerHash, d.gameId, d.contractAddress(), d.signer);
@@ -389,15 +397,12 @@ contract('GameChannelConflict', accounts => {
     });
 
     describe('playerEndConflict', () => {
-        const gameId = 1;
         const stake = MAX_STAKE;
 
         let contractAddress: string;
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            // await gameChannel.createGame(phash3, {from: player, value: stake});
-            // await gameChannel.acceptGame(player, gameId, shash3, {from: server});
             await createGame(gameChannel, server, player, shash3, phash3, stake);
         });
 

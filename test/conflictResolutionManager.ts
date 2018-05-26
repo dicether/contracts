@@ -28,7 +28,6 @@ contract('ConflictResolutionManager', accounts => {
 
     beforeEach(async () => {
         await blockchainLifecycle.takeSnapshotAsync();
-        // gameChannel = await GameChannel.new();
     });
 
     afterEach(async () => {
