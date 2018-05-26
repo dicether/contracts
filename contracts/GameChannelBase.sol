@@ -307,11 +307,11 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      */
     function payOut(address _playerAddress, uint128 _stake, int _balance) internal {
         assert(_balance <= conflictRes.maxBalance());
-        assert((int(_stake) + _balance) >= 0);
+        assert((int(_stake) + _balance) >= 0); // safe as _balance (see line above), _stake ranges are fixed.
 
-        uint valuePlayer = uint(int(_stake) + _balance);
+        uint valuePlayer = uint(int(_stake) + _balance); // safe as _balance, _stake ranges are fixed.
 
-        if (_balance > 0 && int(houseStake) < _balance) {
+        if (_balance > 0 && int(houseStake) < _balance) { // safe to cast houseStake is limited.
             // Should never happen!
             // House is bankrupt.
             // Payout left money.
@@ -320,7 +320,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
 
         houseProfit = houseProfit - _balance;
 
-        int newHouseStake = int(houseStake) - _balance;
+        int newHouseStake = int(houseStake) - _balance; // safe to cast and sub as houseStake, balance ranges are fixed
         assert(newHouseStake >= 0);
         houseStake = uint(newHouseStake);
 
