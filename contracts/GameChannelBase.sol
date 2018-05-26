@@ -307,7 +307,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      */
     function payOut(address _playerAddress, uint128 _stake, int _balance) internal {
         assert(_balance <= conflictRes.maxBalance());
-        assert(_stake <= maxStake);
         assert((int(_stake) + _balance) >= 0);
 
         uint valuePlayer = uint(int(_stake) + _balance);
