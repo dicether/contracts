@@ -4,7 +4,7 @@ import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {
-    calcNewBalance,
+    calcPlayerProfit,
     GameStatus,
     MAX_STAKE,
     NOT_ENDED_FINE,
@@ -307,7 +307,6 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             }, (d: typeof defaultData)  => {
 
             it("should succeed", async () => {
-                const d = defaultData; // tslint:disable-line:no-shadowed-variable
                 const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.playerHash, d.gameId, d.contractAddress(), d.signer);
 
@@ -340,7 +339,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 const houseStakeAfter = await gameChannel.houseStake.call();
 
                 // check new balances (profit, stake, contract balance)
-                const newBalance = BigNumber.max(calcNewBalance(d.gameType, d.num, d.value, d.serverSeed, d.playerSeed, d.balance)
+                const newBalance = BigNumber.max(d.balance.add(calcPlayerProfit(d.gameType,  d.value, d.num, true))
                         .add(NOT_ENDED_FINE),
                     stake.negated()
                 );
@@ -355,7 +354,5 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 await checkActiveGamesAsync(gameChannel, 0);
             });
         });
-
-        // TODO: Add wrong game id check
     });
 });
