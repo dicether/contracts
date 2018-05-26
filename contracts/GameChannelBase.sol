@@ -192,9 +192,11 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     function transferProfitToHouse() public {
         require(lastProfitTransferTimestamp + profitTransferTimeSpan <= block.timestamp);
 
+        // update last transfer timestamp
+        lastProfitTransferTimestamp = block.timestamp;
+
         if (houseProfit <= 0) {
-            // update last transfer timestamp
-            lastProfitTransferTimestamp = block.timestamp;
+            // no profit to transfer
             return;
         }
 
@@ -203,7 +205,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         assert(houseStake >= toTransfer);
 
         houseProfit = 0;
-        lastProfitTransferTimestamp = block.timestamp;
         houseStake = houseStake - toTransfer;
 
         houseAddress.transfer(toTransfer);
