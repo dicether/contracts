@@ -388,6 +388,29 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         );
     }
 
+     /**
+     * @dev Check if _sig is valid signature of _hash. Throws if invalid signature.
+     * @param _hash Hash to check signature of.
+     * @param _sig Signature of _hash.
+     * @param _address Address of signer.
+     */
+    function verify(
+        bytes32 _hash,
+        bytes _sig,
+        address _address
+    )
+        internal
+        pure
+    {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        (r, s, v) = signatureSplit(_sig);
+        address addressRecover = ecrecover(_hash, v, r, s);
+        require(addressRecover == _address);
+    }
+
     /**
      * @dev Calculate typed hash of given data (compare eth_signTypedData).
      * @return Hash of given data.
@@ -423,29 +446,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             TYPE_HASH,
             dataHash
         ));
-    }
-
-     /**
-     * @dev Check if _sig is valid signature of _hash. Throws if invalid signature.
-     * @param _hash Hash to check signature of.
-     * @param _sig Signature of _hash.
-     * @param _address Address of signer.
-     */
-    function verify(
-        bytes32 _hash,
-        bytes _sig,
-        address _address
-    )
-        internal
-        pure
-    {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        (r, s, v) = signatureSplit(_sig);
-        address addressRecover = ecrecover(_hash, v, r, s);
-        require(addressRecover == _address);
     }
 
     /**
