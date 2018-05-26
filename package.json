@@ -18,8 +18,10 @@
   "author": "Dicether",
   "license": "AGPL-3.0-only",
   "dependencies": {
-    "@types/node": "^9.4.6",
-    "truffle": "^4.1.8"
+    "@types/node": "^9.6.18",
+    "ethereumjs-abi": "github:ethereumjs/ethereumjs-abi",
+    "truffle": "^4.1.11",
+    "tslint-config-prettier": "^1.13.0"
   },
   "devDependencies": {
     "@types/chai": "^4.1.2",
