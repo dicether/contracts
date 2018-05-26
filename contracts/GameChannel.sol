@@ -18,8 +18,8 @@ contract GameChannel is GameChannelConflict {
      */
     constructor(
         address _serverAddress,
-        uint _minStake,
-        uint _maxStake,
+        uint128 _minStake,
+        uint128 _maxStake,
         address _conflictResAddress,
         address _houseAddress,
         uint _gameIdCntr
@@ -64,12 +64,13 @@ contract GameChannel is GameChannelConflict {
         playerGameId[msg.sender] = gameId;
         Game storage newGame = gameIdGame[gameId];
 
-        newGame.stake = msg.value;
+        newGame.stake = uint128(msg.value); // It's safe to cast msg.value as it is limited, see onlyValidValue
         newGame.status = GameStatus.ACTIVE;
 
         activeGames = activeGames + 1;
 
-        emit LogGameCreated(msg.sender, gameId, msg.value, _serverEndHash,  _playerEndHash);
+        // It's safe to cast msg.value as it is limited, see onlyValidValue
+        emit LogGameCreated(msg.sender, gameId, uint128(msg.value), _serverEndHash,  _playerEndHash);
     }
 
 

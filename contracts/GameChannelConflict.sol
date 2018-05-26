@@ -19,8 +19,8 @@ contract GameChannelConflict is GameChannelBase {
      */
     constructor(
         address _serverAddress,
-        uint _minStake,
-        uint _maxStake,
+        uint128 _minStake,
+        uint128 _maxStake,
         address _conflictResAddress,
         address _houseAddress,
         uint _gameIdCtr

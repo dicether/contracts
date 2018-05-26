@@ -32,7 +32,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         GameStatus status;
 
         /// @dev Player's stake.
-        uint stake;
+        uint128 stake;
 
         /// @dev Last game round info if not regularly ended.
         /// If game session is ended normally this data is not used.
@@ -84,10 +84,10 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     int public houseProfit = 0;
 
     /// @dev Min value player needs to deposit for creating game session.
-    uint public minStake;
+    uint128 public minStake;
 
     /// @dev Max value player can deposit for creating game session.
-    uint public maxStake;
+    uint128 public maxStake;
 
     /// @dev Timeout until next profit transfer is allowed.
     uint public profitTransferTimeSpan = 14 days;
@@ -131,7 +131,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     }
 
     /// @dev This event is fired when player creates game session.
-    event LogGameCreated(address indexed player, uint indexed gameId, uint stake, bytes32 indexed serverEndHash, bytes32 playerEndHash);
+    event LogGameCreated(address indexed player, uint indexed gameId, uint128 stake, bytes32 indexed serverEndHash, bytes32 playerEndHash);
 
     /// @dev This event is fired when player requests conflict end.
     event LogPlayerRequestedEnd(address indexed player, uint indexed gameId);
@@ -155,8 +155,8 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      */
     constructor(
         address _serverAddress,
-        uint _minStake,
-        uint _maxStake,
+        uint128 _minStake,
+        uint128 _maxStake,
         address _conflictResAddress,
         address _houseAddress,
         uint _gameIdCntr
@@ -263,7 +263,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _minStake Min stake.
      * @param _maxStake Max stake.
      */
-    function setStakeRequirements(uint _minStake, uint _maxStake) public onlyOwner {
+    function setStakeRequirements(uint128 _minStake, uint128 _maxStake) public onlyOwner {
         require(_minStake > 0 && _minStake <= _maxStake);
         minStake = _minStake;
         maxStake = _maxStake;
@@ -304,7 +304,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _stake Player's stake.
      * @param _balance Player's balance.
      */
-    function payOut(address _playerAddress, uint _stake, int _balance) internal {
+    function payOut(address _playerAddress, uint128 _stake, int _balance) internal {
         assert(_balance <= conflictRes.maxBalance());
         assert(_stake <= maxStake);
         assert((int(_stake) + _balance) >= 0);
