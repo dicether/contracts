@@ -282,10 +282,9 @@ contract GameChannelConflict is GameChannelBase {
         require(gameId == _gameId);
         require(_roundId > 0);
         require(keccak256(abi.encodePacked(_playerSeed)) == _playerHash);
-        require(_value <= game.stake);
         require(-int(game.stake) <= _balance && _balance <= maxBalance); // save to cast as ranges are fixed
-        require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
         require(conflictRes.isValidBet(_gameType, _num, _value));
+        require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
 
         if (game.status == GameStatus.SERVER_INITIATED_END && game.roundId == _roundId) {
             game.playerSeed = _playerSeed;
@@ -346,11 +345,9 @@ contract GameChannelConflict is GameChannelBase {
         require(_roundId > 0);
         require(keccak256(abi.encodePacked(_serverSeed)) == _serverHash);
         require(keccak256(abi.encodePacked(_playerSeed)) == _playerHash);
-        require(_value <= game.stake);
         require(-int(game.stake) <= _balance && _balance <= maxBalance); // save to cast as ranges are fixed
-        require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
         require(conflictRes.isValidBet(_gameType, _num, _value));
-
+        require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
 
         if (game.status == GameStatus.PLAYER_INITIATED_END && game.roundId == _roundId) {
             game.serverSeed = _serverSeed;
