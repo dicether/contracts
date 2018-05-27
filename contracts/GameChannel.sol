@@ -229,8 +229,9 @@ contract GameChannel is GameChannelConflict {
         // save to cast as game.stake hash fixed range
         require(-int(game.stake) <= _balance && _balance <= maxBalance);
         require((_gameType == 0) && (_num == 0) && (_value == 0));
-        require(_contractAddress == contractAddress);
         require(game.status == GameStatus.ACTIVE);
+
+        assert(_contractAddress == contractAddress);
 
         closeGame(game, gameId, _roundId, _playerAddress, ReasonEnded.REGULAR_ENDED, _balance);
     }
