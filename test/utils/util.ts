@@ -51,3 +51,4 @@ export async function createGame(contract: any,
 }
 
 export const TRANSACTION_ERROR = 'VM Exception';
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';

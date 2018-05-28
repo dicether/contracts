@@ -8,8 +8,10 @@ pragma solidity ^0.4.24;
  */
 contract Ownable {
     address public owner;
+    address public pendingOwner;
 
     event LogOwnerShipTransferred(address indexed previousOwner, address indexed newOwner);
+    event LogOwnerShipTransferInitiated(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev Modifier, which throws if called by other account than owner.
@@ -20,20 +22,36 @@ contract Ownable {
     }
 
     /**
+     * @dev Modifier throws if called by any account other than the pendingOwner.
+     */
+    modifier onlyPendingOwner() {
+        require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
      * @dev Set contract creator as initial owner
      */
     constructor() public {
         owner = msg.sender;
+        pendingOwner = address(0);
     }
 
     /**
-     * @dev Allows the current owner to transfer control of the
-     * contract to a newOwner _newOwner.
+     * @dev Allows the current owner to set the pendingOwner address.
      * @param _newOwner The address to transfer ownership to.
      */
-    function setOwner(address _newOwner) public onlyOwner {
-        require(_newOwner != address(0));
-        emit LogOwnerShipTransferred(owner, _newOwner);
-        owner = _newOwner;
+    function transferOwnership(address _newOwner) public onlyOwner {
+        pendingOwner = _newOwner;
+        emit LogOwnerShipTransferInitiated(owner, _newOwner);
+    }
+
+    /**
+     * @dev New owner can accpet ownership.
+     */
+    function claimOwnership() public onlyPendingOwner {
+        emit LogOwnerShipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 }
