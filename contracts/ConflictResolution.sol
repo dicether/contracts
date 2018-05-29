@@ -190,7 +190,7 @@ contract ConflictResolution is ConflictResolutionInterface {
             // player cancelled game without playing
             profit = 0;
         } else {
-            profit = int(calculateProfit(_gameType, _betNum, _betValue)); // safe to cast as ranges are limited
+            profit = calculateProfit(_gameType, _betNum, _betValue); // safe to cast as ranges are limited
         }
 
         // penalize server as it didn't end game
