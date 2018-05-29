@@ -306,7 +306,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         pure
         returns(bool)
     {
-        bytes32 combinedHash = keccak256(_serverSeed, _playerSeed);
+        bytes32 combinedHash = keccak256(abi.encodePacked(_serverSeed, _playerSeed));
         uint randNum = uint(combinedHash);
 
         if (_gameType == 1) {
