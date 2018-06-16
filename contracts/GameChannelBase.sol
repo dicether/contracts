@@ -38,7 +38,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         /// If game session is ended normally this data is not used.
         uint8 gameType;
         uint32 roundId;
-        uint16 betNum;
+        uint betNum;
         uint betValue;
         int balance;
         bytes32 playerSeed;
@@ -55,7 +55,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     bytes32 public constant TYPE_HASH = keccak256(abi.encodePacked(
         "uint32 Round Id",
         "uint8 Game Type",
-        "uint16 Number",
+        "uint Number",
         "uint Value (Wei)",
         "int Current Balance (Wei)",
         "bytes32 Server Hash",
@@ -352,7 +352,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     function verifySig(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,
@@ -418,7 +418,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     function calcHash(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,

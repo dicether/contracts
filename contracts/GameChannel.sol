@@ -95,7 +95,7 @@ contract GameChannel is GameChannelConflict {
     function serverEndGame(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,
@@ -142,7 +142,7 @@ contract GameChannel is GameChannelConflict {
     function playerEndGame(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,
@@ -211,7 +211,7 @@ contract GameChannel is GameChannelConflict {
         address _playerAddress,
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         uint _gameId,

@@ -50,7 +50,7 @@ contract GameChannelConflict is GameChannelBase {
     function serverEndGameConflict(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,
@@ -111,7 +111,7 @@ contract GameChannelConflict is GameChannelBase {
     function playerEndGameConflict(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,
@@ -265,7 +265,7 @@ contract GameChannelConflict is GameChannelBase {
     function playerEndGameConflictImpl(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _playerHash,
@@ -325,7 +325,7 @@ contract GameChannelConflict is GameChannelBase {
     function serverEndGameConflictImpl(
         uint32 _roundId,
         uint8 _gameType,
-        uint16 _num,
+        uint _num,
         uint _value,
         int _balance,
         bytes32 _serverHash,
