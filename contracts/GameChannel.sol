@@ -22,10 +22,11 @@ contract GameChannel is GameChannelConflict {
         uint128 _maxStake,
         address _conflictResAddress,
         address _houseAddress,
-        uint _gameIdCntr
+        uint _gameIdCntr,
+        uint _chainId
     )
         public
-        GameChannelConflict(_serverAddress, _minStake, _maxStake, _conflictResAddress, _houseAddress, _gameIdCntr)
+        GameChannelConflict(_serverAddress, _minStake, _maxStake, _conflictResAddress, _houseAddress, _gameIdCntr, _chainId)
     {
         // nothing to do
     }
