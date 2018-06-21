@@ -9,10 +9,10 @@ module.exports = function(deployer, network, accounts) {
     if (network === "development") {
         serverAccount = accounts[1];
         houseAccount = accounts[4];
-    } else if (network == "rinkeby") {
+    } else if (network === "rinkeby") {
         serverAccount = "0xcef260a5fed7a896bbe07b933b3a5c17aec094d8";
         houseAccount = "0x403681a631fd186d6b7b68f20be16c4c8e3edc12";
-    } else if (network == "main"){
+    } else if (network === "main"){
         serverAccount = "0xcef260a5fed7a896bbe07b933b3a5c17aec094d8";
         houseAccount = "0x71be1ace87248f3950bdfc4c89b4b3eed059f6f3";
     } else {
