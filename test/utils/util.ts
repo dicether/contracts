@@ -4,7 +4,7 @@ import * as ChaiAsPromised from 'chai-as-promised';
 import * as ChaiBigNumber from 'chai-bignumber';
 import {promisify} from "util";
 import * as Web3 from 'web3';
-import {signStartData} from "./stateChannel";
+import {signStartData} from "./signUtil";
 
 
 BigNumber.prototype.idiv = function(divider) {

@@ -4,11 +4,17 @@ import * as chai from 'chai';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
 import {
-    HOUSE_STAKE, MAX_STAKE, MIN_STAKE, PROFIT_TRANSFER_TIMESPAN, PROFIT_TRANSFER_TIMESPAN_MAX,
-    PROFIT_TRANSFER_TIMESPAN_MIN, signData,
-    WITHDRAW_ALL_TIMEOUT
-} from './utils/stateChannel';
+    HOUSE_STAKE,
+    MAX_STAKE,
+    MIN_STAKE,
+    PROFIT_TRANSFER_TIMESPAN,
+    PROFIT_TRANSFER_TIMESPAN_MAX,
+    PROFIT_TRANSFER_TIMESPAN_MIN,
+    WITHDRAW_ALL_TIMEOUT,
+} from './utils/config';
+import {signData} from "./utils/signUtil";
 import {configureChai, createGame, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from './utils/util';
+
 
 
 configureChai();
@@ -31,7 +37,7 @@ const createProfitAsync = async (gameChannel: any, player: string, server: strin
     const balance = profit.negated();
 
     const result = await createGame(gameChannel, server, player, hash, hash, profit.abs(), createBefore);
-    const gameId = result.logs[0].args.gameId;
+    const gameId = result.logs[0].args.gameId.toNumber();
 
 
     const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,

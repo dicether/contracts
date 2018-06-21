@@ -1,10 +1,12 @@
+import {signData, signStartData} from "./utils/signUtil";
+
 const GameChannel = artifacts.require("./GameChannel.sol");
 import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MIN_STAKE, signData, signStartData} from './utils/stateChannel';
+import {HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MIN_STAKE} from './utils/config';
 import {configureChai, createGame, TRANSACTION_ERROR} from './utils/util';
 
 
@@ -150,7 +152,7 @@ contract('GameChannel', accounts => {
                     ...defaultData, num: 1
                 },
             'invalid value': {
-                    ...defaultData, value: 1
+                    ...defaultData, value: new BigNumber(1)
             },
             'invalid contract address': {
                     ...defaultData, contractAddress: () => accounts[5]
@@ -277,7 +279,7 @@ contract('GameChannel', accounts => {
                     ...defaultData, num: 1
             },
             'invalid value': {
-                    ...defaultData, value: 1
+                    ...defaultData, value: new BigNumber(1)
             },
             'invalid contract address': {
                     ...defaultData, contractAddress: () => accounts[5]

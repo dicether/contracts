@@ -18,6 +18,7 @@
   "author": "Dicether",
   "license": "AGPL-3.0-only",
   "dependencies": {
+    "@dicether/state-channel": "0.0.1",
     "@types/node": "^9.6.18",
     "ethereumjs-abi": "github:ethereumjs/ethereumjs-abi",
     "truffle": "^4.1.11",

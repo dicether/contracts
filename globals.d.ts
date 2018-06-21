@@ -11,6 +11,7 @@ declare module 'eth-sig-util' {
 
 declare module 'ethereumjs-abi' {
     export function soliditySHA3(types: string[], data: any[]): Buffer
+    export function rawEncode(types: string[], data: any[]): Buffer
 }
 
 declare module 'leche' {

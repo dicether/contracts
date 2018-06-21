@@ -1,18 +1,15 @@
+import {
+    calcPlayerProfit,
+    GameStatus,
+    ReasonEnded, fromWeiToGwei, fromGweiToWei
+} from '@dicether/state-channel';
 import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {
-    calcPlayerProfit,
-    GameStatus,
-    MAX_STAKE,
-    NOT_ENDED_FINE,
-    PLAYER_TIMEOUT,
-    ReasonEnded,
-    SERVER_TIMEOUT,
-    signData
-} from '../utils/stateChannel';
+import {MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, SERVER_TIMEOUT} from "../utils/config";
+import {signData} from "../utils/signUtil";
 import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
 import {
     BET_VALUE,
@@ -25,6 +22,7 @@ import {
     shash2,
     shash3
 } from "./util";
+
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
@@ -339,7 +337,8 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 const houseStakeAfter = await gameChannel.houseStake.call();
 
                 // check new balances (profit, stake, contract balance)
-                const newBalance = BigNumber.max(d.balance.add(calcPlayerProfit(d.gameType,  d.value, d.num, true))
+                const newBalance = BigNumber.max(
+                    d.balance.add(fromGweiToWei(calcPlayerProfit(d.gameType, d.num, fromWeiToGwei(d.value), true)))
                         .add(NOT_ENDED_FINE),
                     stake.negated()
                 );

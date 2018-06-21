@@ -1,7 +1,8 @@
+import {GameStatus, ReasonEnded} from '@dicether/state-channel';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {GameStatus, MAX_STAKE, ReasonEnded} from '../utils/stateChannel';
+import {MAX_STAKE} from "../utils/config";
 import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
 import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
 

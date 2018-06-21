@@ -1,19 +1,20 @@
-import BigNumber from 'bignumber.js';
-import * as chai from 'chai';
-import * as leche from 'leche';
-
-
-import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {
     calcNewBalance,
     GameStatus,
     GameType,
-    MAX_BALANCE,
-    MAX_STAKE,
     ReasonEnded,
-    signData
-} from '../utils/stateChannel';
+    fromWeiToGwei,
+    fromGweiToWei
+} from '@dicether/state-channel';
+import BigNumber from 'bignumber.js';
+import * as chai from 'chai';
+import * as leche from 'leche';
+
+import BlockchainLifecycle from '../utils/BlockchainLifecycle';
+import {MAX_BALANCE, MAX_STAKE} from "../utils/config";
+import {signData} from "../utils/signUtil";
 import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
+
 import {
     BET_VALUE,
     checkGameStateAsync,
@@ -26,6 +27,7 @@ import {
     shash3,
     ZERO_SEED
 } from "./util";
+
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 
@@ -381,7 +383,7 @@ contract('GameChannelConflict', accounts => {
 
                 // check new balances (profit, stake, contract balance)
                 const newBalance = BigNumber.max(
-                    calcNewBalance(d.gameType, d.num, d.value, d.serverSeed, d.playerSeed, d.balance),
+                    fromGweiToWei(calcNewBalance(d.gameType, d.num, fromWeiToGwei(d.value), d.serverSeed, d.playerSeed, fromWeiToGwei(d.balance))),
                     stake.negated()
                 );
 
@@ -639,7 +641,7 @@ contract('GameChannelConflict', accounts => {
 
                 // check new balances (profit, stake, contract balance)
                 const newBalance = BigNumber.max(
-                    calcNewBalance(d.gameType, d.num, d.value, d.serverSeed, d.playerSeed, d.balance),
+                    fromGweiToWei(calcNewBalance(d.gameType, d.num, fromWeiToGwei(d.value), d.serverSeed, d.playerSeed, fromWeiToGwei(d.balance))),
                     stake.negated()
                 );
                 const payout = stake.add(newBalance);

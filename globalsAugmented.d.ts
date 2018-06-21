@@ -5,6 +5,7 @@ declare module "bignumber.js" {
     interface BigNumber {
         idiv(param: BigNumber | number | string): BN;
     }
+
 }
 
 declare global {
