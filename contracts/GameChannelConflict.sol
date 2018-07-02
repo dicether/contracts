@@ -9,6 +9,11 @@ import "./GameChannelBase.sol";
  * @author dicether
  */
 contract GameChannelConflict is GameChannelBase {
+    using SafeCast for int;
+    using SafeCast for uint;
+    using SafeMath for int;
+    using SafeMath for uint;
+
     /**
      * @dev Contract constructor.
      * @param _serverAddress Server address.

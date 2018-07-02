@@ -4,6 +4,8 @@ import "./ConflictResolutionInterface.sol";
 import "./ConflictResolutionManager.sol";
 import "./Destroyable.sol";
 import "./MathUtil.sol";
+import "./SafeCast.sol";
+import "./SafeMath.sol";
 
 
 /**
@@ -12,6 +14,12 @@ import "./MathUtil.sol";
  * @author dicether
  */
 contract GameChannelBase is Destroyable, ConflictResolutionManager {
+    using SafeCast for int;
+    using SafeCast for uint;
+    using SafeMath for int;
+    using SafeMath for uint;
+
+
     /// @dev Different game session states.
     enum GameStatus {
         ENDED, ///< @dev Game session is ended.
@@ -207,12 +215,10 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             return;
         }
 
-        // houseProfit is gt 0 => safe to cast
-        uint toTransfer = uint(houseProfit);
-        assert(houseStake >= toTransfer);
+        uint toTransfer = houseProfit.castToUint();
 
         houseProfit = 0;
-        houseStake = houseStake - toTransfer;
+        houseStake = houseStake.sub(toTransfer);
 
         houseAddress.transfer(toTransfer);
     }
@@ -241,10 +247,10 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     function withdrawHouseStake(uint value) public onlyOwner {
         uint minHouseStake = conflictRes.minHouseStake(activeGames);
 
-        require(value <= houseStake && houseStake - value >= minHouseStake);
-        require(houseProfit <= 0 || uint(houseProfit) <= houseStake - value);
+        require(value <= houseStake && houseStake.sub(value) >= minHouseStake);
+        require(houseProfit <= 0 || houseProfit.castToUint() <= houseStake.sub(value));
 
-        houseStake = houseStake - value;
+        houseStake = houseStake.sub(value);
         owner.transfer(value);
     }
 
@@ -298,8 +304,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     {
         _game.status = GameStatus.ENDED;
 
-        assert(activeGames > 0);
-        activeGames = activeGames - 1;
+        activeGames = activeGames.sub(1);
 
         payOut(_playerAddress, _game.stake, _balance);
 
@@ -313,23 +318,25 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _balance Player's balance.
      */
     function payOut(address _playerAddress, uint128 _stake, int _balance) internal {
+        int stakeInt = int(_stake); // safe to cast as _state is uint128
+        int houseStakeInt = houseStake.castToInt();
+
         assert(_balance <= conflictRes.maxBalance());
-        assert((int(_stake) + _balance) >= 0); // safe as _balance (see line above), _stake ranges are fixed.
+        assert((stakeInt.add(_balance)) >= 0);
 
-        uint valuePlayer = uint(int(_stake) + _balance); // safe as _balance, _stake ranges are fixed.
+        uint valuePlayer = stakeInt.add(_balance).castToUint();
 
-        if (_balance > 0 && int(houseStake) < _balance) { // safe to cast houseStake is limited.
+        if (_balance > 0 && houseStakeInt < _balance) {
             // Should never happen!
             // House is bankrupt.
             // Payout left money.
             valuePlayer = houseStake;
         }
 
-        houseProfit = houseProfit - _balance;
+        houseProfit = houseProfit.sub(_balance);
 
-        int newHouseStake = int(houseStake) - _balance; // safe to cast and sub as houseStake, balance ranges are fixed
-        assert(newHouseStake >= 0);
-        houseStake = uint(newHouseStake);
+        int newHouseStake = houseStakeInt.sub(_balance);
+        houseStake = newHouseStake.castToUint();
 
         pendingReturns[_playerAddress] += valuePlayer;
         if (pendingReturns[_playerAddress] > 0) {

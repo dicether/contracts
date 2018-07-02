@@ -2,6 +2,8 @@ pragma solidity ^0.4.24;
 
 import "./ConflictResolutionInterface.sol";
 import "./MathUtil.sol";
+import "./SafeCast.sol";
+import "./SafeMath.sol";
 
 
 /**
@@ -11,6 +13,11 @@ import "./MathUtil.sol";
  * @author dicether
  */
 contract ConflictResolution is ConflictResolutionInterface {
+    using SafeCast for int;
+    using SafeCast for uint;
+    using SafeMath for int;
+    using SafeMath for uint;
+
     uint public constant DICE_RANGE = 100;
     uint public constant HOUSE_EDGE = 150;
     uint public constant HOUSE_EDGE_DIVISOR = 10000;
@@ -105,7 +112,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _playerSeed);
 
         // do not allow balance below player stake
-        int stake = int(_stake); // safe to cast as stake range is fixed
+        int stake = _stake.castToInt();
         if (newBalance < -stake) {
             newBalance = -stake;
         }
@@ -142,15 +149,14 @@ contract ConflictResolution is ConflictResolutionInterface {
                 || (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0));
 
 
-        // following casts and calculations are safe as ranges are fixed
         // assume player has lost
-        int newBalance = _balance - int(_betValue);
+        int newBalance = _balance.sub(_betValue.castToInt());
 
         // penalize player as he didn't end game
-        newBalance -= NOT_ENDED_FINE;
+        newBalance = newBalance.sub(NOT_ENDED_FINE);
 
         // do not allow balance below player stake
-        int stake = int(_stake); // safe to cast as stake range is fixed
+        int stake = _stake.castToInt();
         if (newBalance < -stake) {
             newBalance = -stake;
         }
@@ -194,9 +200,9 @@ contract ConflictResolution is ConflictResolutionInterface {
         }
 
         // penalize server as it didn't end game
-        profit += NOT_ENDED_FINE;
+        profit = profit.add(NOT_ENDED_FINE);
 
-        return _balance + profit;
+        return _balance.add(profit);
     }
 
     /**
@@ -223,10 +229,10 @@ contract ConflictResolution is ConflictResolutionInterface {
     {
         bool won = hasPlayerWon(_gameType, _betNum, _serverSeed, _playerSeed);
         if (!won) {
-            return _balance - int(_betValue); // safe to cast as ranges are fixed
+            return _balance.sub(_betValue.castToInt());
         } else {
             int profit = calculateProfit(_gameType, _betNum, _betValue);
-            return _balance + profit;
+            return _balance.add(profit);
         }
     }
 
@@ -248,7 +254,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         } else {
             assert(false);
         }
-        return res * 1e9; // convert to wei
+        return res.mul(1e9); // convert to wei
     }
 
     /**
@@ -258,10 +264,10 @@ contract ConflictResolution is ConflictResolutionInterface {
      */
     function calcProfitFromTotalWon(uint _totalWon, uint _betValue) private pure returns(int) {
         // safe to multiply as _totalWon range is fixed.
-        uint houseEdgeValue = _totalWon * HOUSE_EDGE / HOUSE_EDGE_DIVISOR;
+        uint houseEdgeValue = _totalWon.mul(HOUSE_EDGE).div(HOUSE_EDGE_DIVISOR);
 
         // safe to cast as all value ranges are fixed
-        return int(_totalWon) - int(houseEdgeValue) - int(_betValue);
+        return _totalWon.castToInt().sub(houseEdgeValue.castToInt()).sub(_betValue.castToInt());
     }
 
     /**
@@ -274,7 +280,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         assert(_betNum > 0 && _betNum < DICE_RANGE);
 
         // safe as ranges are fixed
-        uint totalWon = _betValue * DICE_RANGE / _betNum;
+        uint totalWon = _betValue.mul(DICE_RANGE).div(_betNum);
         return calcProfitFromTotalWon(totalWon, _betValue);
     }
 
@@ -288,7 +294,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
 
         // safe as ranges are fixed
-        uint totalWon = _betValue * DICE_RANGE / (DICE_RANGE - _betNum - 1);
+        uint totalWon = _betValue.mul(DICE_RANGE).div(DICE_RANGE.sub(_betNum).sub(1));
         return calcProfitFromTotalWon(totalWon, _betValue);
     }
 

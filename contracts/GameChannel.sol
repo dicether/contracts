@@ -68,7 +68,7 @@ contract GameChannel is GameChannelConflict {
         newGame.stake = uint128(msg.value); // It's safe to cast msg.value as it is limited, see onlyValidValue
         newGame.status = GameStatus.ACTIVE;
 
-        activeGames = activeGames + 1;
+        activeGames = activeGames.add(1);
 
         // It's safe to cast msg.value as it is limited, see onlyValidValue
         emit LogGameCreated(msg.sender, gameId, uint128(msg.value), _serverEndHash,  _playerEndHash);
