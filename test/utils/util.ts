@@ -37,16 +37,16 @@ export function configureChai() {
 
 export async function createGame(contract: any,
                                  serverAddress: string,
-                                 playerAddress: string,
+                                 userAddress: string,
                                  serverEndHash: string,
-                                 playerEndHash: string,
-                                 playerStake: BigNumber,
+                                 userEndHash: string,
+                                 userStake: BigNumber,
                                  createBefore: number =  Math.floor(Date.now() / 1000) + 120 * 60) {
-    const lastGameId = (await contract.playerGameId.call(playerAddress)).toNumber();
+    const lastGameId = (await contract.userGameId.call(userAddress)).toNumber();
 
-    const sig = signStartData(contract.address, playerAddress, lastGameId, createBefore, serverEndHash, serverAddress);
+    const sig = signStartData(contract.address, userAddress, lastGameId, createBefore, serverEndHash, serverAddress);
 
-    return contract.createGame(playerEndHash, lastGameId, createBefore, serverEndHash, sig, {from: playerAddress, value: playerStake});
+    return contract.createGame(userEndHash, lastGameId, createBefore, serverEndHash, sig, {from: userAddress, value: userStake});
 
 }
 

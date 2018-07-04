@@ -26,32 +26,32 @@ const hash = '0x0000000000000000000000000000000000000000000000000000000000000001
 const PROFIT = MIN_STAKE;
 
 
-const createProfitAsync = async (gameChannel: any, player: string, server: string, profit: BigNumber,  createBefore?: number) => {
+const createProfitAsync = async (gameChannel: any, user: string, server: string, profit: BigNumber,  createBefore?: number) => {
     const contractAddress = gameChannel.address;
     const gameType = 0;
     const num = 0;
     const value = new BigNumber(0);
     const serverHash = hash;
-    const playerHash = hash;
+    const userHash = hash;
     const roundId = 10;
     const balance = profit.negated();
 
-    const result = await createGame(gameChannel, server, player, hash, hash, profit.abs(), createBefore);
+    const result = await createGame(gameChannel, server, user, hash, hash, profit.abs(), createBefore);
     const gameId = result.logs[0].args.gameId.toNumber();
 
 
-    const sig = signData(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
-            contractAddress, player);
+    const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            contractAddress, user);
 
-    await gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, playerHash, gameId,
-        contractAddress, player, sig, {from: server});
+    await gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+        contractAddress, user, sig, {from: server});
 };
 
 
 contract('GameChannelBase', accounts => {
     const owner = accounts[0];
     const server = accounts[1];
-    const player = accounts[2];
+    const user = accounts[2];
     const notOwner = accounts[3];
 
     const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
@@ -72,23 +72,23 @@ contract('GameChannelBase', accounts => {
 
     describe('transferProfitToHouse', () => {
         it("Should fail if wrong timeout 1!", async () => {
-            await createProfitAsync(gameChannel, player, server, PROFIT);
+            await createProfitAsync(gameChannel, user, server, PROFIT);
 
             return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if wrong timeout 2!", async () => {
-            await createProfitAsync(gameChannel, player, server, PROFIT);
+            await createProfitAsync(gameChannel, user, server, PROFIT);
 
             await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
             await gameChannel.transferProfitToHouse({from: notOwner});
 
-            await createProfitAsync(gameChannel, player, server, PROFIT, PROFIT_TRANSFER_TIMESPAN + Math.floor(Date.now() / 1000) + 120 * 60);
+            await createProfitAsync(gameChannel, user, server, PROFIT, PROFIT_TRANSFER_TIMESPAN + Math.floor(Date.now() / 1000) + 120 * 60);
             return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should transfer nothing if negative profit", async () => {
-            await createProfitAsync(gameChannel, player, server, PROFIT.negated());
+            await createProfitAsync(gameChannel, user, server, PROFIT.negated());
             await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
 
             const houseAddress = await gameChannel.houseAddress.call();
@@ -104,7 +104,7 @@ contract('GameChannelBase', accounts => {
             const profit = PROFIT;
             const timeSpan = PROFIT_TRANSFER_TIMESPAN;
 
-            await createProfitAsync(gameChannel, player, server, profit);
+            await createProfitAsync(gameChannel, user, server, profit);
 
             const houseAddress = await gameChannel.houseAddress.call();
             const prevBalance = await web3.eth.getBalance(houseAddress);
@@ -153,14 +153,14 @@ contract('GameChannelBase', accounts => {
         });
 
         it('Should fail if below min house stake', async () => {
-            await createGame(gameChannel, server, player, hash, hash, MAX_STAKE);
+            await createGame(gameChannel, server, user, hash, hash, MAX_STAKE);
             return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR)
         });
 
         it('Should fail if house profit not backed', async () => {
             const profit = PROFIT.negated();
-            await createProfitAsync(gameChannel, player, server, profit);
+            await createProfitAsync(gameChannel, user, server, profit);
 
             return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
                 .to.be.rejectedWith(TRANSACTION_ERROR)

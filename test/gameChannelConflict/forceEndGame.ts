@@ -1,5 +1,5 @@
 import {
-    calcPlayerProfit,
+    calcUserProfit,
     GameStatus,
     ReasonEnded, fromWeiToGwei, fromGweiToWei
 } from '@dicether/state-channel';
@@ -8,7 +8,7 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {MAX_STAKE, NOT_ENDED_FINE, PLAYER_TIMEOUT, SERVER_TIMEOUT} from "../utils/config";
+import {MAX_STAKE, NOT_ENDED_FINE, USER_TIMEOUT, SERVER_TIMEOUT} from "../utils/config";
 import {signData} from "../utils/signUtil";
 import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
 import {
@@ -35,7 +35,7 @@ const withData = leche.withData;
 
 contract('GameChannelConflict-ForceEnd', accounts => {
     const server = accounts[1];
-    const player = accounts[2];
+    const user = accounts[2];
 
     const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
     let gameChannel: any;
@@ -61,7 +61,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await createGame(gameChannel, server, player, shash3, phash3, stake);
+            await createGame(gameChannel, server, user, shash3, phash3, stake);
 
         });
 
@@ -72,20 +72,20 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             value: BET_VALUE,
             balance: stake.idiv(2),
             serverHash: shash2,
-            playerHash: phash2,
+            userHash: phash2,
             gameId: 1,
             contractAddress: () => contractAddress,
-            playerAddress: player,
+            userAddress: user,
             serverSeed: shash1,
-            playerSeed: phash1,
-            signer: player,
+            userSeed: phash1,
+            signer: user,
             from: server
         };
 
         it("Should fail if time span too low", async () => {
             const d = defaultData;
-            const playerSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), d.signer);
+            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
                 d.roundId,
@@ -94,23 +94,23 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 d.value,
                 d.balance,
                 d.serverHash,
-                d.playerHash,
+                d.userHash,
                 d.gameId,
                 d.contractAddress(),
-                playerSig,
-                d.playerAddress,
+                userSig,
+                d.userAddress,
                 d.serverSeed,
-                d.playerSeed,
+                d.userSeed,
                 {from: d.from}
             );
 
-            return expect(gameChannel.serverForceGameEnd(player, d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.serverForceGameEnd(user, d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if wrong sender", async () => {
             const d = defaultData;
-            const playerSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), d.signer);
+            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
                 d.roundId,
@@ -119,53 +119,53 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 d.value,
                 d.balance,
                 d.serverHash,
-                d.playerHash,
+                d.userHash,
                 d.gameId,
                 d.contractAddress(),
-                playerSig,
-                d.playerAddress,
+                userSig,
+                d.userAddress,
                 d.serverSeed,
-                d.playerSeed,
+                d.userSeed,
                 {from: d.from}
             );
 
-            return expect(gameChannel.serverForceGameEnd(player, d.gameId, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.serverForceGameEnd(user, d.gameId, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game still active", async () => {
             const d = defaultData;
-            return expect(gameChannel.serverForceGameEnd(player, d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR)
+            return expect(gameChannel.serverForceGameEnd(user, d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR)
         });
 
-        it("Should fail if player init end game!", async () => {
+        it("Should fail if user init end game!", async () => {
             const d = defaultData;
             const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), server);
+                d.userHash, d.gameId, d.contractAddress(), server);
 
-            await gameChannel.playerEndGameConflict(
+            await gameChannel.userEndGameConflict(
                 d.roundId,
                 d.gameType,
                 d.num,
                 d.value,
                 d.balance,
                 d.serverHash,
-                d.playerHash,
+                d.userHash,
                 d.gameId,
                 d.contractAddress(),
                 serverSig,
-                d.playerSeed,
-                {from: player}
+                d.userSeed,
+                {from: user}
             );
 
-            await increaseTimeAsync(Math.max(SERVER_TIMEOUT, PLAYER_TIMEOUT));
+            await increaseTimeAsync(Math.max(SERVER_TIMEOUT, USER_TIMEOUT));
 
-            return expect(gameChannel.serverForceGameEnd(player, d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.serverForceGameEnd(user, d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Force end should succeed", async () => {
             const d = defaultData;
-            const playerSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), d.signer);
+            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
                 d.roundId,
@@ -174,13 +174,13 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 d.value,
                 d.balance,
                 d.serverHash,
-                d.playerHash,
+                d.userHash,
                 d.gameId,
                 d.contractAddress(),
-                playerSig,
-                d.playerAddress,
+                userSig,
+                d.userAddress,
                 d.serverSeed,
-                d.playerSeed,
+                d.userSeed,
                 {from: d.from}
             );
 
@@ -189,7 +189,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             const houseStakeBefore = await gameChannel.houseStake.call();
 
             await increaseTimeAsync(SERVER_TIMEOUT);
-            await gameChannel.serverForceGameEnd(player, d.gameId, {from: server});
+            await gameChannel.serverForceGameEnd(user, d.gameId, {from: server});
 
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
@@ -203,7 +203,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
             expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.END_FORCED_BY_SERVER);
+            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.SERVER_FORCED_END);
 
             await checkActiveGamesAsync(gameChannel, 0);
         });
@@ -211,7 +211,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
         // TODO: Add wrong game id check
     });
 
-    describe('playerForceGameEnd', async () => {
+    describe('userForceGameEnd', async () => {
         const gameId = 1;
         const stake = MAX_STAKE;
 
@@ -219,7 +219,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         beforeEach(async () => {
             contractAddress = gameChannel.address;
-            await createGame(gameChannel, server, player, shash3, phash3, stake);
+            await createGame(gameChannel, server, user, shash3, phash3, stake);
 
         });
 
@@ -230,48 +230,48 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             value: BET_VALUE,
             balance: stake.idiv(2),
             serverHash: shash2,
-            playerHash: phash2,
+            userHash: phash2,
             gameId: 1,
             contractAddress: () => contractAddress,
-            playerAddress: player,
+            userAddress: user,
             serverSeed: shash1,
-            playerSeed: phash1,
+            userSeed: phash1,
             signer: server,
-            from: player
+            from: user
         };
 
         it("Should fail if time span too low", async () => {
             const d = defaultData;
             const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), d.signer);
+                d.userHash, d.gameId, d.contractAddress(), d.signer);
 
-            await gameChannel.playerEndGameConflict(
+            await gameChannel.userEndGameConflict(
                 d.roundId,
                 d.gameType,
                 d.num,
                 d.value,
                 d.balance,
                 d.serverHash,
-                d.playerHash,
+                d.userHash,
                 d.gameId,
                 d.contractAddress(),
                 serverSig,
-                d.playerSeed,
+                d.userSeed,
                 {from: d.from}
             );
 
-            return expect(gameChannel.playerForceGameEnd(d.gameId, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.userForceGameEnd(d.gameId, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game still active", async () => {
             const d = defaultData;
-            return expect(gameChannel.playerForceGameEnd(d.gameId, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR)
+            return expect(gameChannel.userForceGameEnd(d.gameId, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR)
         });
 
         it("Should fail if server init end game!", async () => {
             const d = defaultData;
-            const playerSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                d.playerHash, d.gameId, d.contractAddress(), player);
+            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                d.userHash, d.gameId, d.contractAddress(), user);
 
             await gameChannel.serverEndGameConflict(
                 d.roundId,
@@ -280,19 +280,19 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 d.value,
                 d.balance,
                 d.serverHash,
-                d.playerHash,
+                d.userHash,
                 d.gameId,
                 d.contractAddress(),
-                playerSig,
-                d.playerAddress,
+                userSig,
+                d.userAddress,
                 d.serverSeed,
-                d.playerSeed,
+                d.userSeed,
                 {from: server}
             );
 
-            await increaseTimeAsync(Math.max(SERVER_TIMEOUT, PLAYER_TIMEOUT));
+            await increaseTimeAsync(Math.max(SERVER_TIMEOUT, USER_TIMEOUT));
 
-            return expect(gameChannel.playerForceGameEnd(d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.userForceGameEnd(d.gameId, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         withData({
@@ -306,31 +306,31 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
             it("should succeed", async () => {
                 const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
-                    d.playerHash, d.gameId, d.contractAddress(), d.signer);
+                    d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                 console.log("Game type", d.gameType);
-                await gameChannel.playerEndGameConflict(
+                await gameChannel.userEndGameConflict(
                     d.roundId,
                     d.gameType,
                     d.num,
                     d.value,
                     d.balance,
                     d.serverHash,
-                    d.playerHash,
+                    d.userHash,
                     d.gameId,
                     d.contractAddress(),
                     serverSig,
-                    d.playerSeed,
+                    d.userSeed,
                     {from: d.from}
                 );
 
-                await increaseTimeAsync(PLAYER_TIMEOUT);
+                await increaseTimeAsync(USER_TIMEOUT);
 
                 const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
                 const houseProfitBefore = await gameChannel.houseProfit.call();
                 const houseStakeBefore = await gameChannel.houseStake.call();
 
-                await gameChannel.playerForceGameEnd(d.gameId, {from: player});
+                await gameChannel.userForceGameEnd(d.gameId, {from: user});
 
                 const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
                 const houseProfitAfter = await gameChannel.houseProfit.call();
@@ -338,7 +338,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
                 // check new balances (profit, stake, contract balance)
                 const newBalance = BigNumber.max(
-                    d.balance.add(fromGweiToWei(calcPlayerProfit(d.gameType, d.num, fromWeiToGwei(d.value), true)))
+                    d.balance.add(fromGweiToWei(calcUserProfit(d.gameType, d.num, fromWeiToGwei(d.value), true)))
                         .add(NOT_ENDED_FINE),
                     stake.negated()
                 );
@@ -348,7 +348,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
                 expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
 
-                await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.END_FORCED_BY_PLAYER);
+                await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.USER_FORCED_END);
 
                 await checkActiveGamesAsync(gameChannel, 0);
             });

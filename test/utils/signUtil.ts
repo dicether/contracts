@@ -38,14 +38,14 @@ export function signData(roundId: number, gameType: number, num: number, value: 
 }
 
 export function signStartData(contractAddress: string,
-                              player: string,
+                              user: string,
                               lastGameId: number,
                               createBefore: number,
                               serverEndHash: string,
                               serverAccount: string): string {
     const hash = ethAbi.soliditySHA3(
         ['address', 'address', 'uint', 'uint', 'bytes32'],
-        [contractAddress, player, lastGameId, createBefore, ethUtil.toBuffer(serverEndHash)]
+        [contractAddress, user, lastGameId, createBefore, ethUtil.toBuffer(serverEndHash)]
     );
 
     if (!(serverAccount in publicPrivateKeyMap)) {

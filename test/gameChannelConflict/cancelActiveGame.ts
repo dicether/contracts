@@ -15,8 +15,8 @@ const expect = chai.expect;
 
 contract('GameChannelConflict', accounts => {
     const server = accounts[1];
-    const player = accounts[2];
-    const player2 = accounts[3];
+    const user = accounts[2];
+    const user2 = accounts[3];
 
     const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
     let gameChannel: any;
@@ -39,36 +39,36 @@ contract('GameChannelConflict', accounts => {
         const stake = MAX_STAKE;
 
         beforeEach(async () => {
-            await createGame(gameChannel, server, player, shash3, phash3, stake);
+            await createGame(gameChannel, server, user, shash3, phash3, stake);
 
         });
 
         it("Should fail if wrong gameId", async () => {
-            await createGame(gameChannel, server, player2, shash3, phash3, stake);
+            await createGame(gameChannel, server, user2, shash3, phash3, stake);
 
-            return expect(gameChannel.serverCancelActiveGame(player, 2, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.serverCancelActiveGame(user, 2, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game status not active", async () => {
-            await gameChannel.playerCancelActiveGame(1, {from: player});
+            await gameChannel.userCancelActiveGame(1, {from: user});
 
-            return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.userCancelActiveGame(2, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
-        it("Should fail if wrong player address", async () => {
-            await createGame(gameChannel, server, player2, shash3, phash3, stake);
+        it("Should fail if wrong user address", async () => {
+            await createGame(gameChannel, server, user2, shash3, phash3, stake);
 
-            return expect(gameChannel.serverCancelActiveGame(player2, 1, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.serverCancelActiveGame(user2, 1, {from: server})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
-        it("Should succeed if already playerCancelActiveGame called by player", async () => {
-            await gameChannel.playerCancelActiveGame(1, {from: player});
+        it("Should succeed if already userCancelActiveGame called by user", async () => {
+            await gameChannel.userCancelActiveGame(1, {from: user});
 
             const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
-            await gameChannel.serverCancelActiveGame(player, gameId, {from: server});
+            await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
 
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
@@ -84,40 +84,40 @@ contract('GameChannelConflict', accounts => {
         });
 
         it("Should succeed", async () => {
-            await gameChannel.serverCancelActiveGame(player, gameId, {from: server});
+            await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.SERVER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
         });
     });
 
-    describe('playerCancelActiveGame', () => {
+    describe('userCancelActiveGame', () => {
         const gameId = 1;
         const stake = MAX_STAKE;
 
         beforeEach(async () => {
-            await createGame(gameChannel, server, player, shash3, phash3, stake);
+            await createGame(gameChannel, server, user, shash3, phash3, stake);
         });
 
         it("Should fail if wrong gameId", async () => {
-            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+            await gameChannel.userCancelActiveGame(gameId, {from: user});
 
-            return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.userCancelActiveGame(2, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game status not active", async () => {
-            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+            await gameChannel.userCancelActiveGame(gameId, {from: user});
 
-            return expect(gameChannel.playerCancelActiveGame(2, {from: player})).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(gameChannel.userCancelActiveGame(2, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should succeed if already serverCancelActiveGame called by server", async () => {
-            await gameChannel.serverCancelActiveGame(player, 1, {from: server});
+            await gameChannel.serverCancelActiveGame(user, 1, {from: server});
 
             const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
-            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+            await gameChannel.userCancelActiveGame(gameId, {from: user});
 
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
@@ -133,9 +133,9 @@ contract('GameChannelConflict', accounts => {
         });
 
         it("Should succeed", async () => {
-            await gameChannel.playerCancelActiveGame(gameId, {from: player});
+            await gameChannel.userCancelActiveGame(gameId, {from: user});
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.PLAYER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
+            await checkGameStatusAsync(gameChannel, gameId, GameStatus.USER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
 
             await checkActiveGamesAsync(gameChannel, 1);
         });

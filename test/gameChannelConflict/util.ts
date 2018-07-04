@@ -34,7 +34,7 @@ export async function checkGameStatusAsync(gameChannel: any, gameId: number, sta
 
 export async function checkGameStateAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number,
                                    gameTypeRef: number, roundIdRef: number, numRef: number, betValueRef: BigNumber,
-                                   balanceRef: BigNumber, playerSeedRef: string, serverSeedRef: string) {
+                                   balanceRef: BigNumber, userSeedRef: string, serverSeedRef: string) {
     const game = await gameChannel.gameIdGame.call(gameId);
 
     const status = game[0].toNumber();
@@ -42,7 +42,7 @@ export async function checkGameStateAsync(gameChannel: any, gameId: number, stat
     const roundId = game[3].toNumber();
     const betNum = game[4].toNumber();
     const betValue = game[5];
-    const playerSeed = game[7];
+    const userSeed = game[7];
     const serverSeed = game[8];
 
     expect(status).to.equal(statusRef);
@@ -50,7 +50,7 @@ export async function checkGameStateAsync(gameChannel: any, gameId: number, stat
     expect(roundId).to.equal(roundIdRef);
     expect(betNum).to.equal(numRef);
     expect(betValue).to.be.bignumber.equal(betValueRef);
-    expect(playerSeed).to.equal(playerSeedRef);
+    expect(userSeed).to.equal(userSeedRef);
     expect(serverSeed).to.equal(serverSeedRef);
 }
 

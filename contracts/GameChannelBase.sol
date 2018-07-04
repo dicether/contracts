@@ -24,22 +24,22 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     enum GameStatus {
         ENDED, ///< @dev Game session is ended.
         ACTIVE, ///< @dev Game session is active.
-        PLAYER_INITIATED_END, ///< @dev Player initiated non regular end.
+        USER_INITIATED_END, ///< @dev User initiated non regular end.
         SERVER_INITIATED_END ///< @dev Server initiated non regular end.
     }
 
     /// @dev Reason game session ended.
     enum ReasonEnded {
         REGULAR_ENDED, ///< @dev Game session is regularly ended.
-        END_FORCED_BY_SERVER, ///< @dev Player did not respond. Server forced end.
-        END_FORCED_BY_PLAYER ///< @dev Server did not respond. Player forced end.
+        END_FORCED_BY_SERVER, ///< @dev User did not respond. Server forced end.
+        END_FORCED_BY_USER ///< @dev Server did not respond. User forced end.
     }
 
     struct Game {
         /// @dev Game session status.
         GameStatus status;
 
-        /// @dev Player's stake.
+        /// @dev User's stake.
         uint128 stake;
 
         /// @dev Last game round info if not regularly ended.
@@ -49,7 +49,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         uint betNum;
         uint betValue;
         int balance;
-        bytes32 playerSeed;
+        bytes32 userSeed;
         bytes32 serverSeed;
         uint endInitiatedTime;
     }
@@ -89,10 +89,10 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev House profit since last profit transfer.
     int public houseProfit = 0;
 
-    /// @dev Min value player needs to deposit for creating game session.
+    /// @dev Min value user needs to deposit for creating game session.
     uint128 public minStake;
 
-    /// @dev Max value player can deposit for creating game session.
+    /// @dev Max value user can deposit for creating game session.
     uint128 public maxStake;
 
     /// @dev Timeout until next profit transfer is allowed.
@@ -104,10 +104,10 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev Maps gameId to game struct.
     mapping (uint => Game) public gameIdGame;
 
-    /// @dev Maps player address to current player game id.
-    mapping (address => uint) public playerGameId;
+    /// @dev Maps user address to current user game id.
+    mapping (address => uint) public userGameId;
 
-    /// @dev Maps player address to pending returns.
+    /// @dev Maps user address to pending returns.
     mapping (address => uint) public pendingReturns;
 
     /// @dev Modifier, which only allows to execute if house stake is high enough.
@@ -117,7 +117,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         _;
     }
 
-    /// @dev Modifier to check if value send fulfills player stake requirements.
+    /// @dev Modifier to check if value send fulfills user stake requirements.
     modifier onlyValidValue() {
         require(minStake <= msg.value && msg.value <= maxStake);
         _;
@@ -136,26 +136,26 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         _;
     }
 
-    /// @dev This event is fired when player creates game session.
-    event LogGameCreated(address indexed player, uint indexed gameId, uint128 stake, bytes32 indexed serverEndHash, bytes32 playerEndHash);
+    /// @dev This event is fired when user creates game session.
+    event LogGameCreated(address indexed user, uint indexed gameId, uint128 stake, bytes32 indexed serverEndHash, bytes32 userEndHash);
 
-    /// @dev This event is fired when player requests conflict end.
-    event LogPlayerRequestedEnd(address indexed player, uint indexed gameId);
+    /// @dev This event is fired when user requests conflict end.
+    event LogUserRequestedEnd(address indexed user, uint indexed gameId);
 
     /// @dev This event is fired when server requests conflict end.
-    event LogServerRequestedEnd(address indexed player, uint indexed gameId);
+    event LogServerRequestedEnd(address indexed user, uint indexed gameId);
 
     /// @dev This event is fired when game session is ended.
-    event LogGameEnded(address indexed player, uint indexed gameId, uint32 roundId, int balance, ReasonEnded reason);
+    event LogGameEnded(address indexed user, uint indexed gameId, uint32 roundId, int balance, ReasonEnded reason);
 
-    /// @dev this event is fired when owner modifies player's stake limits.
+    /// @dev this event is fired when owner modifies user's stake limits.
     event LogStakeLimitsModified(uint minStake, uint maxStake);
 
     /**
      * @dev Contract constructor.
      * @param _serverAddress Server address.
-     * @param _minStake Min value player needs to deposit to create game session.
-     * @param _maxStake Max value player can deposit to create game session.
+     * @param _minStake Min value user needs to deposit to create game session.
+     * @param _maxStake Max value user can deposit to create game session.
      * @param _conflictResAddress Conflict resolution contract address.
      * @param _houseAddress House address to move profit to.
      */
@@ -288,7 +288,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @dev Close game session.
      * @param _game Game session data.
      * @param _gameId Id of game session.
-     * @param _playerAddress Player's address of game session.
+     * @param _userAddress User's address of game session.
      * @param _reason Reason for closing game session.
      * @param _balance Game session balance.
      */
@@ -296,7 +296,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         Game storage _game,
         uint _gameId,
         uint32 _roundId,
-        address _playerAddress,
+        address _userAddress,
         ReasonEnded _reason,
         int _balance
     )
@@ -306,31 +306,31 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
 
         activeGames = activeGames.sub(1);
 
-        payOut(_playerAddress, _game.stake, _balance);
+        payOut(_userAddress, _game.stake, _balance);
 
-        emit LogGameEnded(_playerAddress, _gameId, _roundId, _balance, _reason);
+        emit LogGameEnded(_userAddress, _gameId, _roundId, _balance, _reason);
     }
 
     /**
-     * @dev End game by paying out player and server.
-     * @param _playerAddress Player's address.
-     * @param _stake Player's stake.
-     * @param _balance Player's balance.
+     * @dev End game by paying out user and server.
+     * @param _userAddress User's address.
+     * @param _stake User's stake.
+     * @param _balance User's balance.
      */
-    function payOut(address _playerAddress, uint128 _stake, int _balance) internal {
+    function payOut(address _userAddress, uint128 _stake, int _balance) internal {
         int stakeInt = int(_stake); // safe to cast as _state is uint128
         int houseStakeInt = houseStake.castToInt();
 
         assert(_balance <= conflictRes.maxBalance());
         assert((stakeInt.add(_balance)) >= 0);
 
-        uint valuePlayer = stakeInt.add(_balance).castToUint();
+        uint valueUser = stakeInt.add(_balance).castToUint();
 
         if (_balance > 0 && houseStakeInt < _balance) {
             // Should never happen!
             // House is bankrupt.
             // Payout left money.
-            valuePlayer = houseStake;
+            valueUser = houseStake;
         }
 
         houseProfit = houseProfit.sub(_balance);
@@ -338,9 +338,9 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         int newHouseStake = houseStakeInt.sub(_balance);
         houseStake = newHouseStake.castToUint();
 
-        pendingReturns[_playerAddress] += valuePlayer;
-        if (pendingReturns[_playerAddress] > 0) {
-            safeSend(_playerAddress);
+        pendingReturns[_userAddress] += valueUser;
+        if (pendingReturns[_userAddress] > 0) {
+            safeSend(_userAddress);
         }
     }
 
@@ -370,7 +370,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         uint _value,
         int _balance,
         bytes32 _serverHash,
-        bytes32 _playerHash,
+        bytes32 _userHash,
         uint _gameId,
         address _contractAddress,
         bytes _sig,
@@ -390,7 +390,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
                 _value,
                 _balance,
                 _serverHash,
-                _playerHash,
+                _userHash,
                 _gameId,
                 _contractAddress
         );
@@ -436,7 +436,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         uint _value,
         int _balance,
         bytes32 _serverHash,
-        bytes32 _playerHash,
+        bytes32 _userHash,
         uint _gameId,
         address _contractAddress
     )
@@ -452,7 +452,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             _value,
             _balance,
             _serverHash,
-            _playerHash,
+            _userHash,
             _gameId
         ));
 

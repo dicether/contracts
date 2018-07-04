@@ -9,7 +9,7 @@ import "./SafeMath.sol";
 /**
  * @title Conflict Resolution
  * @dev Contract used for conflict resolution. Only needed if server or
- * player stops responding during game session.
+ * user stops responding during game session.
  * @author dicether
  */
 contract ConflictResolution is ConflictResolutionInterface {
@@ -23,7 +23,7 @@ contract ConflictResolution is ConflictResolutionInterface {
     uint public constant HOUSE_EDGE_DIVISOR = 10000;
 
     uint public constant SERVER_TIMEOUT = 6 hours;
-    uint public constant PLAYER_TIMEOUT = 6 hours;
+    uint public constant USER_TIMEOUT = 6 hours;
 
     uint8 public constant DICE_LOWER = 1; ///< @dev dice game lower number wins
     uint8 public constant DICE_HIGHER = 2; ///< @dev dice game higher number wins
@@ -89,7 +89,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @param _betValue Value of bet.
      * @param _balance Current balance.
      * @param _serverSeed Server's seed of current round.
-     * @param _playerSeed Player's seed of current round.
+     * @param _userSeed User's seed of current round.
      * @return New game session balance.
      */
     function endGameConflict(
@@ -99,7 +99,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         int _balance,
         uint _stake,
         bytes32 _serverSeed,
-        bytes32 _playerSeed
+        bytes32 _userSeed
     )
         public
         view
@@ -107,11 +107,11 @@ contract ConflictResolution is ConflictResolutionInterface {
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
-        assert(_serverSeed != 0 && _playerSeed != 0);
+        assert(_serverSeed != 0 && _userSeed != 0);
 
-        int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _playerSeed);
+        int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _userSeed);
 
-        // do not allow balance below player stake
+        // do not allow balance below user stake
         int stake = _stake.castToInt();
         if (newBalance < -stake) {
             newBalance = -stake;
@@ -121,13 +121,13 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * @dev Force end of game if player does not respond. Only possible after a time period.
-     * to give the player a chance to respond.
+     * @dev Force end of game if user does not respond. Only possible after a time period.
+     * to give the user a chance to respond.
      * @param _gameType Game type.
      * @param _betNum Bet number.
      * @param _betValue Bet value.
      * @param _balance Current balance.
-     * @param _stake Player stake.
+     * @param _stake User stake.
      * @param _endInitiatedTime Time server initiated end.
      * @return New game session balance.
      */
@@ -149,13 +149,13 @@ contract ConflictResolution is ConflictResolutionInterface {
                 || (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0));
 
 
-        // assume player has lost
+        // assume user has lost
         int newBalance = _balance.sub(_betValue.castToInt());
 
-        // penalize player as he didn't end game
+        // penalize user as he didn't end game
         newBalance = newBalance.sub(NOT_ENDED_FINE);
 
-        // do not allow balance below player stake
+        // do not allow balance below user stake
         int stake = _stake.castToInt();
         if (newBalance < -stake) {
             newBalance = -stake;
@@ -174,7 +174,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @param _endInitiatedTime Time server initiated end.
      * @return New game session balance.
      */
-    function playerForceGameEnd(
+    function userForceGameEnd(
         uint8 _gameType,
         uint _betNum,
         uint _betValue,
@@ -187,13 +187,13 @@ contract ConflictResolution is ConflictResolutionInterface {
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
-        require(_endInitiatedTime + PLAYER_TIMEOUT <= block.timestamp);
+        require(_endInitiatedTime + USER_TIMEOUT <= block.timestamp);
         require(isValidBet(_gameType, _betNum, _betValue) ||
                 (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0));
 
         int profit = 0;
         if (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0) {
-            // player cancelled game without playing
+            // user cancelled game without playing
             profit = 0;
         } else {
             profit = calculateProfit(_gameType, _betNum, _betValue); // safe to cast as ranges are limited
@@ -212,7 +212,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @param _betValue Value of bet.
      * @param _balance Current balance.
      * @param _serverSeed Server's seed
-     * @param _playerSeed Player's seed
+     * @param _userSeed User's seed
      * return new balance.
      */
     function processBet(
@@ -221,13 +221,13 @@ contract ConflictResolution is ConflictResolutionInterface {
         uint _betValue,
         int _balance,
         bytes32 _serverSeed,
-        bytes32 _playerSeed
+        bytes32 _userSeed
     )
         private
         pure
         returns (int)
     {
-        bool won = hasPlayerWon(_gameType, _betNum, _serverSeed, _playerSeed);
+        bool won = hasUserWon(_gameType, _betNum, _serverSeed, _userSeed);
         if (!won) {
             return _balance.sub(_betValue.castToInt());
         } else {
@@ -237,11 +237,11 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * @dev Calculate player profit.
+     * @dev Calculate user profit.
      * @param _gameType type of game.
      * @param _betNum bet numbe.
      * @param _betValue bet value.
-     * return profit of player
+     * return profit of user
      */
     function calculateProfit(uint8 _gameType, uint _betNum, uint _betValue) private pure returns(int) {
         uint betValueInGwei = _betValue / 1e9; // convert to gwei
@@ -258,9 +258,9 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * Calculate player profit from total won.
-     * @param _totalWon player winning in gwei.
-     * @return player profit in gwei.
+     * Calculate user profit from total won.
+     * @param _totalWon user winning in gwei.
+     * @return user profit in gwei.
      */
     function calcProfitFromTotalWon(uint _totalWon, uint _betValue) private pure returns(int) {
         // safe to multiply as _totalWon range is fixed.
@@ -271,10 +271,10 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * @dev Calculate player profit if player has won for game type 1 (dice lower wins).
-     * @param _betNum Bet number of player.
+     * @dev Calculate user profit if user has won for game type 1 (dice lower wins).
+     * @param _betNum Bet number of user.
      * @param _betValue Value of bet in gwei.
-     * @return Players' profit.
+     * @return Users' profit.
      */
     function calculateProfitGameType1(uint _betNum, uint _betValue) private pure returns(int) {
         assert(_betNum > 0 && _betNum < DICE_RANGE);
@@ -285,10 +285,10 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * @dev Calculate player profit if player has won for game type 2 (dice lower wins).
-     * @param _betNum Bet number of player.
+     * @dev Calculate user profit if user has won for game type 2 (dice lower wins).
+     * @param _betNum Bet number of user.
      * @param _betValue Value of bet in gwei.
-     * @return Players' profit.
+     * @return Users' profit.
      */
     function calculateProfitGameType2(uint _betNum, uint _betValue) private pure returns(int) {
         assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
@@ -299,20 +299,20 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * @dev Check if player hash won or lost.
-     * @return true if player has won.
+     * @dev Check if user hash won or lost.
+     * @return true if user has won.
      */
-    function hasPlayerWon(
+    function hasUserWon(
         uint8 _gameType,
         uint _betNum,
         bytes32 _serverSeed,
-        bytes32 _playerSeed
+        bytes32 _userSeed
     )
         private
         pure
         returns(bool)
     {
-        bytes32 combinedHash = keccak256(abi.encodePacked(_serverSeed, _playerSeed));
+        bytes32 combinedHash = keccak256(abi.encodePacked(_serverSeed, _userSeed));
         uint randNum = uint(combinedHash);
 
         if (_gameType == 1) {
@@ -328,7 +328,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @dev Calculate winner of game type 1 (roll lower).
      * @param _randomNum 256 bit random number.
      * @param _betNum Bet number.
-     * @return True if player has won false if he lost.
+     * @return True if user has won false if he lost.
      */
     function calculateWinnerGameType1(uint _randomNum, uint _betNum) private pure returns(bool) {
         assert(_betNum > 0 && _betNum < DICE_RANGE);
@@ -341,7 +341,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @dev Calculate winner of game type 2 (roll higher).
      * @param _randomNum 256 bit random number.
      * @param _betNum Bet number.
-     * @return True if player has won false if he lost.
+     * @return True if user has won false if he lost.
      */
     function calculateWinnerGameType2(uint _randomNum, uint _betNum) private pure returns(bool) {
         assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
