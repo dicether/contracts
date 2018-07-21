@@ -31,8 +31,8 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev Reason game session ended.
     enum ReasonEnded {
         REGULAR_ENDED, ///< @dev Game session is regularly ended.
-        END_FORCED_BY_SERVER, ///< @dev User did not respond. Server forced end.
-        END_FORCED_BY_USER ///< @dev Server did not respond. User forced end.
+        SERVER_FORCED_END, ///< @dev User did not respond. Server forced end.
+        USER_FORCED_END ///< @dev Server did not respond. User forced end.
     }
 
     struct Game {

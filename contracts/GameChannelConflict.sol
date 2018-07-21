@@ -227,7 +227,7 @@ contract GameChannelConflict is GameChannelBase {
             game.endInitiatedTime
         );
 
-        closeGame(game, gameId, game.roundId, _userAddress, ReasonEnded.END_FORCED_BY_SERVER, newBalance);
+        closeGame(game, gameId, game.roundId, _userAddress, ReasonEnded.SERVER_FORCED_END, newBalance);
     }
 
     /**
@@ -251,7 +251,7 @@ contract GameChannelConflict is GameChannelBase {
             game.endInitiatedTime
         );
 
-        closeGame(game, gameId, game.roundId, userAddress, ReasonEnded.END_FORCED_BY_USER, newBalance);
+        closeGame(game, gameId, game.roundId, userAddress, ReasonEnded.USER_FORCED_END, newBalance);
     }
 
     /**
