@@ -13,7 +13,7 @@ contract Destroyable is Pausable {
     uint public constant TIMEOUT_DESTROY = 20 days;
 
     /**
-     * @dev Destroy contract and transfer ether to address _targetAddress.
+     * @dev Destroy contract and transfer ether to owner.
      */
     function destroy() public onlyOwner onlyPausedSince(TIMEOUT_DESTROY) {
         selfdestruct(owner);
