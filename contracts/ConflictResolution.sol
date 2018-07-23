@@ -107,7 +107,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
-        assert(_serverSeed != 0 && _userSeed != 0);
+        require(_serverSeed != 0 && _userSeed != 0);
 
         int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _userSeed);
 
