@@ -36,13 +36,13 @@ contract ConflictResolution is ConflictResolutionInterface {
     int public constant MAX_BALANCE = int(MAX_BET_VALUE) * 100 * 5;
 
     modifier onlyValidBet(uint8 _gameType, uint _betNum, uint _betValue) {
-        require(isValidBet(_gameType, _betNum, _betValue));
+        require(isValidBet(_gameType, _betNum, _betValue), "inv bet");
         _;
     }
 
     modifier onlyValidBalance(int _balance, uint _gameStake) {
         // safe to cast gameStake as range is fixed
-        require(-int(_gameStake) <= _balance && _balance <= MAX_BALANCE);
+        require(-int(_gameStake) <= _balance && _balance <= MAX_BALANCE, "inv balance");
         _;
     }
 
@@ -107,7 +107,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
-        require(_serverSeed != 0 && _userSeed != 0);
+        require(_serverSeed != 0 && _userSeed != 0, "inv seeds");
 
         int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _userSeed);
 
@@ -144,9 +144,9 @@ contract ConflictResolution is ConflictResolutionInterface {
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
-        require(_endInitiatedTime + SERVER_TIMEOUT <= block.timestamp);
+        require(_endInitiatedTime + SERVER_TIMEOUT <= block.timestamp, "too low timeout");
         require(isValidBet(_gameType, _betNum, _betValue)
-                || (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0));
+                || (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0), "inv bet");
 
 
         // assume user has lost
@@ -187,9 +187,9 @@ contract ConflictResolution is ConflictResolutionInterface {
         onlyValidBalance(_balance, _stake)
         returns(int)
     {
-        require(_endInitiatedTime + USER_TIMEOUT <= block.timestamp);
+        require(_endInitiatedTime + USER_TIMEOUT <= block.timestamp, "too low timeout");
         require(isValidBet(_gameType, _betNum, _betValue) ||
-                (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0));
+                (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0), "inv bet");
 
         int profit = 0;
         if (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0) {
