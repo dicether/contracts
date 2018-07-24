@@ -14,6 +14,7 @@ const expect = chai.expect;
 
 
 contract('GameChannelConflict', accounts => {
+    const owner = accounts[0];
     const server = accounts[1];
     const user = accounts[2];
     const user2 = accounts[3];
@@ -23,6 +24,8 @@ contract('GameChannelConflict', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
+        await gameChannel.activate({from: owner});
+        await gameChannel.unpause({from: owner});
     });
 
     beforeEach(async () => {

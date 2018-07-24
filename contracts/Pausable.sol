@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./Ownable.sol";
+import "./Activatable.sol";
 
 
 /**
@@ -8,12 +8,12 @@ import "./Ownable.sol";
  * @dev Provides pausing support.
  * @author dicether
  */
-contract Pausable is Ownable {
-    /// @dev Is contract paused.
-    bool public paused = false;
+contract Pausable is Activatable {
+    /// @dev Is contract paused. Initial it is paused.
+    bool public paused = true;
 
     /// @dev Time pause was called
-    uint public timePaused = 0;
+    uint public timePaused = block.timestamp;
 
     /// @dev Modifier, which only allows function execution if not paused.
     modifier onlyNotPaused() {
@@ -29,7 +29,7 @@ contract Pausable is Ownable {
 
     /// @dev Modifier, which only allows function execution if paused longer than timeSpan.
     modifier onlyPausedSince(uint timeSpan) {
-        require(paused && timePaused + timeSpan <= block.timestamp);
+        require(paused && (timePaused + timeSpan <= block.timestamp));
         _;
     }
 
@@ -49,9 +49,9 @@ contract Pausable is Ownable {
     }
 
     /**
-     * @dev Unpause contract.
+     * @dev Unpause contract. Initial contract is paused and can only be unpaused after activating it.
      */
-    function unpause() public onlyOwner onlyPaused {
+    function unpause() public onlyOwner onlyPaused onlyActivated {
         paused = false;
         timePaused = 0;
         emit LogUnpause();

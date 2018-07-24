@@ -34,6 +34,7 @@ const withData = leche.withData;
 
 
 contract('GameChannelConflict-ForceEnd', accounts => {
+    const owner = accounts[0];
     const server = accounts[1];
     const user = accounts[2];
 
@@ -42,6 +43,8 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
+        await gameChannel.activate({from: owner});
+        await gameChannel.unpause({from: owner});
     });
 
     beforeEach(async () => {

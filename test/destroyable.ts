@@ -32,21 +32,29 @@ contract('Destroyable', accounts => {
 
     describe('destroy', () => {
         it('Should fail if owner calls not paused', async () => {
+            await gameChannel.activate({from: owner});
+            await gameChannel.unpause({from: owner});
             return expect(gameChannel.destroy({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it('Should fail if owner calls paused with wrong timeout', async () => {
+            await gameChannel.activate({from: owner});
+            await gameChannel.unpause({from: owner});
             await gameChannel.pause({from: owner});
             return expect(gameChannel.destroy({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it('Should fail if non owner calls with correct timeout', async () => {
+            await gameChannel.activate({from: owner});
+            await gameChannel.unpause({from: owner});
             await gameChannel.pause({from: owner});
             await increaseTimeAsync(DestroyTimeout);
             return expect(gameChannel.destroy({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it('Should succeed of owner call with correct timeout', async () => {
+            await gameChannel.activate({from: owner});
+            await gameChannel.unpause({from: owner});
             await gameChannel.pause({from: owner});
             await increaseTimeAsync(DestroyTimeout);
 
