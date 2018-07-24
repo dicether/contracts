@@ -166,7 +166,7 @@ contract GameChannelConflict is GameChannelBase {
         uint gameId = userGameId[userAddress];
         Game storage game = gameIdGame[gameId];
 
-        require(gameId == _gameId);
+        require(gameId == _gameId, "inv gameId");
 
         if (game.status == GameStatus.ACTIVE) {
             game.endInitiatedTime = block.timestamp;
@@ -190,7 +190,7 @@ contract GameChannelConflict is GameChannelBase {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
 
-        require(gameId == _gameId);
+        require(gameId == _gameId, "inv gameId");
 
         if (game.status == GameStatus.ACTIVE) {
             game.endInitiatedTime = block.timestamp;
@@ -213,8 +213,8 @@ contract GameChannelConflict is GameChannelBase {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
 
-        require(gameId == _gameId);
-        require(game.status == GameStatus.SERVER_INITIATED_END);
+        require(gameId == _gameId, "inv gameId");
+        require(game.status == GameStatus.SERVER_INITIATED_END, "inv status");
 
         // theoretically we have enough data to calculate winner
         // but as user did not respond assume he has lost.
@@ -239,8 +239,8 @@ contract GameChannelConflict is GameChannelBase {
         uint gameId = userGameId[userAddress];
         Game storage game = gameIdGame[gameId];
 
-        require(gameId == _gameId);
-        require(game.status == GameStatus.USER_INITIATED_END);
+        require(gameId == _gameId, "inv gameId");
+        require(game.status == GameStatus.USER_INITIATED_END, "inv status");
 
         int newBalance = conflictRes.userForceGameEnd(
             game.gameType,
@@ -285,12 +285,12 @@ contract GameChannelConflict is GameChannelBase {
         Game storage game = gameIdGame[gameId];
         int maxBalance = conflictRes.maxBalance();
 
-        require(gameId == _gameId);
-        require(_roundId > 0);
-        require(keccak256(abi.encodePacked(_userSeed)) == _userHash);
-        require(-int(game.stake) <= _balance && _balance <= maxBalance); // save to cast as ranges are fixed
-        require(conflictRes.isValidBet(_gameType, _num, _value));
-        require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
+        require(gameId == _gameId, "inv gameId");
+        require(_roundId > 0, "inv roundId");
+        require(keccak256(abi.encodePacked(_userSeed)) == _userHash, "inv userSeed");
+        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance"); // save to cast as ranges are fixed
+        require(conflictRes.isValidBet(_gameType, _num, _value), "inv bet");
+        require(int(game.stake) + _balance - int(_value) >= 0, "value too high"); // save to cast as ranges are fixed
 
         if (game.status == GameStatus.SERVER_INITIATED_END && game.roundId == _roundId) {
             game.userSeed = _userSeed;
@@ -309,7 +309,7 @@ contract GameChannelConflict is GameChannelBase {
 
             emit LogUserRequestedEnd(msg.sender, gameId);
         } else {
-            revert();
+            revert("inv state");
         }
     }
 
@@ -347,13 +347,13 @@ contract GameChannelConflict is GameChannelBase {
         Game storage game = gameIdGame[gameId];
         int maxBalance = conflictRes.maxBalance();
 
-        require(gameId == _gameId);
-        require(_roundId > 0);
-        require(keccak256(abi.encodePacked(_serverSeed)) == _serverHash);
-        require(keccak256(abi.encodePacked(_userSeed)) == _userHash);
-        require(-int(game.stake) <= _balance && _balance <= maxBalance); // save to cast as ranges are fixed
-        require(conflictRes.isValidBet(_gameType, _num, _value));
-        require(int(game.stake) + _balance - int(_value) >= 0); // save to cast as ranges are fixed
+        require(gameId == _gameId, "inv gameId");
+        require(_roundId > 0, "inv roundId");
+        require(keccak256(abi.encodePacked(_serverSeed)) == _serverHash, "inv serverSeed");
+        require(keccak256(abi.encodePacked(_userSeed)) == _userHash, "inv userSeed");
+        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance"); // save to cast as ranges are fixed
+        require(conflictRes.isValidBet(_gameType, _num, _value), "inv bet");
+        require(int(game.stake) + _balance - int(_value) >= 0, "too high value"); // save to cast as ranges are fixed
 
         if (game.status == GameStatus.USER_INITIATED_END && game.roundId == _roundId) {
             game.serverSeed = _serverSeed;
@@ -372,7 +372,7 @@ contract GameChannelConflict is GameChannelBase {
 
             emit LogServerRequestedEnd(_userAddress, gameId);
         } else {
-            revert();
+            revert("inv state");
         }
     }
 

@@ -17,7 +17,7 @@ contract Pausable is Ownable {
 
     /// @dev Modifier, which only allows function execution if not paused.
     modifier onlyNotPaused() {
-        require(!paused);
+        require(!paused, "paused");
         _;
     }
 

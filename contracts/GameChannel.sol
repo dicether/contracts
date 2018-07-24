@@ -55,9 +55,9 @@ contract GameChannel is GameChannelConflict {
         uint previousGameId = userGameId[msg.sender];
         Game storage game = gameIdGame[previousGameId];
 
-        require(game.status == GameStatus.ENDED);
-        require(previousGameId == _previousGameId);
-        require(block.timestamp < _createBefore);
+        require(game.status == GameStatus.ENDED, "prev game not ended");
+        require(previousGameId == _previousGameId, "inv gamePrevGameId");
+        require(block.timestamp < _createBefore, "expired");
 
         verifyCreateSig(msg.sender, _previousGameId, _createBefore, _serverEndHash, _serverSig);
 
@@ -225,12 +225,12 @@ contract GameChannel is GameChannelConflict {
         address contractAddress = this;
         int maxBalance = conflictRes.maxBalance();
 
-        require(_gameId == gameId);
-        require(_roundId > 0);
+        require(_gameId == gameId, "inv gameId");
+        require(_roundId > 0, "inv roundId");
         // save to cast as game.stake hash fixed range
-        require(-int(game.stake) <= _balance && _balance <= maxBalance);
-        require((_gameType == 0) && (_num == 0) && (_value == 0));
-        require(game.status == GameStatus.ACTIVE);
+        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance");
+        require((_gameType == 0) && (_num == 0) && (_value == 0), "inv state");
+        require(game.status == GameStatus.ACTIVE, "inv status");
 
         assert(_contractAddress == contractAddress);
 

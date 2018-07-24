@@ -113,13 +113,13 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev Modifier, which only allows to execute if house stake is high enough.
     modifier onlyValidHouseStake(uint _activeGames) {
         uint minHouseStake = conflictRes.minHouseStake(_activeGames);
-        require(houseStake >= minHouseStake);
+        require(houseStake >= minHouseStake, "inv houseStake");
         _;
     }
 
     /// @dev Modifier to check if value send fulfills user stake requirements.
     modifier onlyValidValue() {
-        require(minStake <= msg.value && msg.value <= maxStake);
+        require(minStake <= msg.value && msg.value <= maxStake, "inv stake");
         _;
     }
 
@@ -381,7 +381,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     {
         // check if this is the correct contract
         address contractAddress = this;
-        require(_contractAddress == contractAddress);
+        require(_contractAddress == contractAddress, "inv contractAddress");
 
         bytes32 roundHash = calcHash(
                 _roundId,
@@ -422,7 +422,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
 
         (r, s, v) = signatureSplit(_sig);
         address addressRecover = ecrecover(_hash, v, r, s);
-        require(addressRecover == _address);
+        require(addressRecover == _address, "inv sig");
     }
 
     /**
@@ -474,7 +474,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         pure
         returns (bytes32 r, bytes32 s, uint8 v)
     {
-        require(_signature.length == 65);
+        require(_signature.length == 65, "inv sig");
 
         assembly {
             r := mload(add(_signature, 32))
