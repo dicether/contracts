@@ -288,9 +288,9 @@ contract GameChannelConflict is GameChannelBase {
         require(gameId == _gameId, "inv gameId");
         require(_roundId > 0, "inv roundId");
         require(keccak256(abi.encodePacked(_userSeed)) == _userHash, "inv userSeed");
-        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance"); // save to cast as ranges are fixed
+        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance"); // game.stake save to cast as uint128
         require(conflictRes.isValidBet(_gameType, _num, _value), "inv bet");
-        require(int(game.stake) + _balance - int(_value) >= 0, "value too high"); // save to cast as ranges are fixed
+        require(int(game.stake).add(_balance).sub(_value.castToInt()) >= 0, "value too high"); // game.stake save to cast as uint128
 
         if (game.status == GameStatus.SERVER_INITIATED_END && game.roundId == _roundId) {
             game.userSeed = _userSeed;
@@ -351,9 +351,9 @@ contract GameChannelConflict is GameChannelBase {
         require(_roundId > 0, "inv roundId");
         require(keccak256(abi.encodePacked(_serverSeed)) == _serverHash, "inv serverSeed");
         require(keccak256(abi.encodePacked(_userSeed)) == _userHash, "inv userSeed");
-        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance"); // save to cast as ranges are fixed
+        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance"); // game.stake save to cast as uint128
         require(conflictRes.isValidBet(_gameType, _num, _value), "inv bet");
-        require(int(game.stake) + _balance - int(_value) >= 0, "too high value"); // save to cast as ranges are fixed
+        require(int(game.stake).add(_balance).sub(_value.castToInt()) >= 0, "too high value"); // game.stake save to cast as uin128
 
         if (game.status == GameStatus.USER_INITIATED_END && game.roundId == _roundId) {
             game.serverSeed = _serverSeed;
