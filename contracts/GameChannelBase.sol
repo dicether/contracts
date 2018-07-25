@@ -75,7 +75,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
 
     /// @dev Game session id counter. Points to next free game session slot. So gameIdCntr -1 is the
     // number of game sessions created.
-    uint public gameIdCntr;
+    uint public gameIdCntr = 1;
 
     /// @dev Only this address can accept and end games.
     address public serverAddress;
@@ -165,16 +165,13 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         uint128 _maxStake,
         address _conflictResAddress,
         address _houseAddress,
-        uint _gameIdCntr,
         uint _chainId
     )
         public
         ConflictResolutionManager(_conflictResAddress)
     {
         require(_minStake > 0 && _minStake <= _maxStake);
-        require(_gameIdCntr > 0);
 
-        gameIdCntr = _gameIdCntr;
         serverAddress = _serverAddress;
         houseAddress = _houseAddress;
         lastProfitTransferTimestamp = block.timestamp;
@@ -188,6 +185,14 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             _chainId,
             address(this)
         ));
+    }
+
+    /**
+     * @dev Set gameIdCntr. Can be only set before activating contract.
+     */
+    function setGameIdCntr(uint _gameIdCntr) public onlyOwner onlyNotActivated {
+        require(gameIdCntr > 0);
+        gameIdCntr = _gameIdCntr;
     }
 
     /**

@@ -25,7 +25,7 @@ module.exports = function(deployer, network, accounts) {
 
     deployer.deploy(ConflictResolution, {gas: 2000000}).then(() => {
         return deployer.deploy(GameChannel, serverAccount, 1e16, 5e17, ConflictResolution.address,
-            houseAccount, 1, chainId, {gas: 5000000});
+            houseAccount, chainId, {gas: 5000000});
 
     }).then( () => {
         return GameChannel.deployed();
