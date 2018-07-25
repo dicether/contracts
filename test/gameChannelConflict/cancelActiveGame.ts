@@ -2,7 +2,7 @@ import {GameStatus, ReasonEnded} from '@dicether/state-channel';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {MAX_STAKE} from "../utils/config";
+import {MAX_STAKE, NOT_ENDED_FINE} from "../utils/config";
 import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
 import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
 
@@ -77,11 +77,11 @@ contract('GameChannelConflict', accounts => {
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore);
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore);
+            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
+            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.add(NOT_ENDED_FINE));
+            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.add(NOT_ENDED_FINE));
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
+            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 
             await checkActiveGamesAsync(gameChannel, 0);
         });
@@ -126,11 +126,11 @@ contract('GameChannelConflict', accounts => {
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore);
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore);
+            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
+            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.add(NOT_ENDED_FINE));
+            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.add(NOT_ENDED_FINE));
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
+            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 
             await checkActiveGamesAsync(gameChannel, 0);
         });

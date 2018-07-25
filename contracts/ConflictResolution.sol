@@ -33,6 +33,8 @@ contract ConflictResolution is ConflictResolutionInterface {
 
     int public constant NOT_ENDED_FINE = 1e15; /// 0.001 ether
 
+    int public constant CONFLICT_END_FINE = 1e15; /// 0.001 ether
+
     int public constant MAX_BALANCE = int(MAX_BET_VALUE) * 100 * 5;
 
     modifier onlyValidBet(uint8 _gameType, uint _betNum, uint _betValue) {
@@ -66,6 +68,10 @@ contract ConflictResolution is ConflictResolutionInterface {
         }
 
         return validValue && validGame;
+    }
+
+    function conflictEndFine() public pure returns(int) {
+        return CONFLICT_END_FINE;
     }
 
     /**
@@ -110,6 +116,12 @@ contract ConflictResolution is ConflictResolutionInterface {
         require(_serverSeed != 0 && _userSeed != 0, "inv seeds");
 
         int newBalance =  processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _userSeed);
+
+        // user need to pay a fee when conflict ended.
+        // this ensures a malicious, rich user can not just generate game sessions and then wait
+        // for us to end the game session and then confirm the session status, so
+        // we would have to pay a high gas fee without profit.
+        newBalance = newBalance.sub(CONFLICT_END_FINE);
 
         // do not allow balance below user stake
         int stake = _stake.castToInt();

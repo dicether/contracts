@@ -13,6 +13,8 @@ interface ConflictResolutionInterface {
 
     function maxBalance() external pure returns(int);
 
+    function conflictEndFine() external pure returns(int);
+
     function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) external pure returns(bool);
 
     function endGameConflict(

@@ -11,7 +11,7 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {MAX_BALANCE, MAX_STAKE} from "../utils/config";
+import {CONFLICT_END_FINE, MAX_BALANCE, MAX_STAKE} from "../utils/config";
 import {signData} from "../utils/signUtil";
 import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
 
@@ -386,7 +386,14 @@ contract('GameChannelConflict', accounts => {
 
                 // check new balances (profit, stake, contract balance)
                 const newBalance = BigNumber.max(
-                    fromGweiToWei(calcNewBalance(d.gameType, d.num, fromWeiToGwei(d.value), d.serverSeed, d.userSeed, fromWeiToGwei(d.balance))),
+                    fromGweiToWei(calcNewBalance(
+                        d.gameType,
+                        d.num,
+                        fromWeiToGwei(d.value),
+                        d.serverSeed,
+                        d.userSeed,
+                        fromWeiToGwei(d.balance)
+                    )).sub(CONFLICT_END_FINE),
                     stake.negated()
                 );
 
@@ -644,7 +651,14 @@ contract('GameChannelConflict', accounts => {
 
                 // check new balances (profit, stake, contract balance)
                 const newBalance = BigNumber.max(
-                    fromGweiToWei(calcNewBalance(d.gameType, d.num, fromWeiToGwei(d.value), d.serverSeed, d.userSeed, fromWeiToGwei(d.balance))),
+                    fromGweiToWei(calcNewBalance(
+                        d.gameType,
+                        d.num,
+                        fromWeiToGwei(d.value),
+                        d.serverSeed,
+                        d.userSeed,
+                        fromWeiToGwei(d.balance)
+                    )).sub(CONFLICT_END_FINE),
                     stake.negated()
                 );
                 const payout = stake.add(newBalance);

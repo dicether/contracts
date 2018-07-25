@@ -173,7 +173,7 @@ contract GameChannelConflict is GameChannelBase {
 
             emit LogUserRequestedEnd(msg.sender, gameId);
         } else if (game.status == GameStatus.SERVER_INITIATED_END && game.roundId == 0) {
-            closeGame(game, gameId, 0, userAddress, ReasonEnded.REGULAR_ENDED, 0);
+            cancelActiveGame(game, gameId, userAddress);
         } else {
             revert();
         }
@@ -197,7 +197,7 @@ contract GameChannelConflict is GameChannelBase {
 
             emit LogServerRequestedEnd(msg.sender, gameId);
         } else if (game.status == GameStatus.USER_INITIATED_END && game.roundId == 0) {
-            closeGame(game, gameId, 0, _userAddress, ReasonEnded.REGULAR_ENDED, 0);
+            cancelActiveGame(game, gameId, _userAddress);
         } else {
             revert();
         }
@@ -376,6 +376,27 @@ contract GameChannelConflict is GameChannelBase {
     }
 
     /**
+     * @dev End conflicting game without placed bets.
+     * @param _game Game session data.
+     * @param _gameId Game session id.
+     * @param _userAddress User's address.
+     */
+    function cancelActiveGame(Game storage _game, uint _gameId, address _userAddress) private {
+        // user need to pay a fee when conflict ended.
+        // this ensures a malicious, rich user can not just generate game sessions and then wait
+        // for us to end the game session and then confirm the session status, so
+        // we would have to pay a high gas fee without profit.
+        int newBalance = -conflictRes.conflictEndFine();
+
+        // do not allow balance below user stake
+        int stake = _game.stake;
+        if (newBalance < -stake) {
+            newBalance = -stake;
+        }
+        closeGame(_game, _gameId, 0, _userAddress, ReasonEnded.CONFLICT_ENDED, newBalance);
+    }
+
+    /**
      * @dev End conflicting game.
      * @param _game Game session data.
      * @param _gameId Game session id.
@@ -392,6 +413,6 @@ contract GameChannelConflict is GameChannelBase {
             _game.userSeed
         );
 
-        closeGame(_game, _gameId, _game.roundId, _userAddress, ReasonEnded.REGULAR_ENDED, newBalance);
+        closeGame(_game, _gameId, _game.roundId, _userAddress, ReasonEnded.CONFLICT_ENDED, newBalance);
     }
 }

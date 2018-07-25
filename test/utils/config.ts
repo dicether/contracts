@@ -8,6 +8,7 @@ export const MIN_VALUE = new BigNumber('1e13');
 export const MAX_VALUE = new BigNumber('2e16');
 export const MAX_BALANCE = MAX_VALUE.mul(500);
 export const NOT_ENDED_FINE = new BigNumber('1e15');
+export const CONFLICT_END_FINE = new BigNumber('1e15');
 export const SERVER_TIMEOUT = 6 * 3600;
 export const USER_TIMEOUT = 6 * 3600;
 export const PROFIT_TRANSFER_TIMESPAN_MIN = 24 * 60 * 60;
