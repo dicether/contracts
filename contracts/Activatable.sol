@@ -11,7 +11,7 @@ import "./Ownable.sol";
 contract Activatable is Ownable {
     bool public activated = false;
 
-    /// @dev Event is fired if paused.
+    /// @dev Event is fired if activated.
     event LogActive();
 
     /// @dev Modifier, which only allows function execution if activated.
