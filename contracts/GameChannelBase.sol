@@ -211,7 +211,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @notice Transfer house profit to houseAddress.
      */
     function transferProfitToHouse() public {
-        require(lastProfitTransferTimestamp + profitTransferTimeSpan <= block.timestamp);
+        require(lastProfitTransferTimestamp.add(profitTransferTimeSpan) <= block.timestamp);
 
         // update last transfer timestamp
         lastProfitTransferTimestamp = block.timestamp;
