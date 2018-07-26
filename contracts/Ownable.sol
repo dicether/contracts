@@ -50,8 +50,8 @@ contract Ownable {
      * @dev PendingOwner can accept ownership.
      */
     function claimOwnership() public onlyPendingOwner {
-        emit LogOwnerShipTransferred(owner, pendingOwner);
         owner = pendingOwner;
         pendingOwner = address(0);
+        emit LogOwnerShipTransferred(owner, pendingOwner);
     }
 }
