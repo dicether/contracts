@@ -244,7 +244,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @dev Increase house stake by msg.value
      */
     function addHouseStake() public payable onlyOwner {
-        houseStake += msg.value;
+        houseStake = houseStake.add(msg.value);
     }
 
     /**
