@@ -43,8 +43,7 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     modifier onlyValidBalance(int _balance, uint _gameStake) {
-        // safe to cast gameStake as range is fixed
-        require(-int(_gameStake) <= _balance && _balance <= MAX_BALANCE, "inv balance");
+        require(-_gameStake.castToInt() <= _balance && _balance <= MAX_BALANCE, "inv balance");
         _;
     }
 
