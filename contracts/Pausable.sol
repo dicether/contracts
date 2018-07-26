@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./Activatable.sol";
+import "./SafeMath.sol";
 
 
 /**
@@ -9,6 +10,8 @@ import "./Activatable.sol";
  * @author dicether
  */
 contract Pausable is Activatable {
+    using SafeMath for uint;
+
     /// @dev Is contract paused. Initial it is paused.
     bool public paused = true;
 
@@ -29,7 +32,7 @@ contract Pausable is Activatable {
 
     /// @dev Modifier, which only allows function execution if paused longer than timeSpan.
     modifier onlyPausedSince(uint timeSpan) {
-        require(paused && (timePaused + timeSpan <= block.timestamp));
+        require(paused && (timePaused.add(timeSpan) <= block.timestamp));
         _;
     }
 
