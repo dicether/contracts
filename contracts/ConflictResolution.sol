@@ -69,6 +69,9 @@ contract ConflictResolution is ConflictResolutionInterface {
         return validValue && validGame;
     }
 
+    /**
+     * @return Conflict end fine.
+     */
     function conflictEndFine() public pure returns(int) {
         return CONFLICT_END_FINE;
     }
