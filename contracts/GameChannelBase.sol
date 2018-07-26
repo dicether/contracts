@@ -324,7 +324,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _balance User's balance.
      */
     function payOut(address _userAddress, uint128 _stake, int _balance) internal {
-        int stakeInt = int(_stake); // safe to cast as _state is uint128
+        int stakeInt = _stake;
         int houseStakeInt = houseStake.castToInt();
 
         assert(_balance <= conflictRes.maxBalance());
