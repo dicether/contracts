@@ -47,7 +47,7 @@ contract Ownable {
     }
 
     /**
-     * @dev New owner can accpet ownership.
+     * @dev PendingOwner can accept ownership.
      */
     function claimOwnership() public onlyPendingOwner {
         emit LogOwnerShipTransferred(owner, pendingOwner);
