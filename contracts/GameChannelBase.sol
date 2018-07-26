@@ -330,13 +330,11 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         assert(_balance <= conflictRes.maxBalance());
         assert((stakeInt.add(_balance)) >= 0);
 
-        uint valueUser = stakeInt.add(_balance).castToUint();
-
         if (_balance > 0 && houseStakeInt < _balance) {
             // Should never happen!
             // House is bankrupt.
             // Payout left money.
-            valueUser = houseStake;
+            _balance = houseStakeInt;
         }
 
         houseProfit = houseProfit.sub(_balance);
@@ -344,6 +342,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         int newHouseStake = houseStakeInt.sub(_balance);
         houseStake = newHouseStake.castToUint();
 
+        uint valueUser = stakeInt.add(_balance).castToUint();
         pendingReturns[_userAddress] += valueUser;
         if (pendingReturns[_userAddress] > 0) {
             safeSend(_userAddress);
