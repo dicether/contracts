@@ -397,8 +397,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
                 _balance,
                 _serverHash,
                 _userHash,
-                _gameId,
-                _contractAddress
+                _gameId
         );
 
         verify(
@@ -443,8 +442,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         int _balance,
         bytes32 _serverHash,
         bytes32 _userHash,
-        uint _gameId,
-        address _contractAddress
+        uint _gameId
     )
         private
         view
