@@ -421,11 +421,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         internal
         pure
     {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        (r, s, v) = signatureSplit(_sig);
+        (bytes32 r, bytes32 s, uint8 v) = signatureSplit(_sig);
         address addressRecover = ecrecover(_hash, v, r, s);
         require(addressRecover == _address, "inv sig");
     }
