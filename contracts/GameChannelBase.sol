@@ -159,6 +159,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _maxStake Max value user can deposit to create game session.
      * @param _conflictResAddress Conflict resolution contract address.
      * @param _houseAddress House address to move profit to.
+     * @param _chainId Chain id for signature domain.
      */
     constructor(
         address _serverAddress,
