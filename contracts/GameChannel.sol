@@ -222,17 +222,17 @@ contract GameChannel is GameChannelConflict {
     {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
-        address contractAddress = this;
         int maxBalance = conflictRes.maxBalance();
+        int gameStake = game.stake;
 
         require(_gameId == gameId, "inv gameId");
         require(_roundId > 0, "inv roundId");
         // save to cast as game.stake hash fixed range
-        require(-int(game.stake) <= _balance && _balance <= maxBalance, "inv balance");
+        require(-gameStake <= _balance && _balance <= maxBalance, "inv balance");
         require((_gameType == 0) && (_num == 0) && (_value == 0), "inv state");
         require(game.status == GameStatus.ACTIVE, "inv status");
 
-        assert(_contractAddress == contractAddress);
+        assert(_contractAddress == address(this));
 
         closeGame(game, gameId, _roundId, _userAddress, ReasonEnded.REGULAR_ENDED, _balance);
     }
