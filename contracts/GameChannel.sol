@@ -33,11 +33,11 @@ contract GameChannel is GameChannelConflict {
 
     /**
      * @notice Create games session request. msg.value needs to be valid stake value.
-     * @param _userEndHash last entry of users' hash chain.
-     * @param _previousGameId user's previous game id, initial 0.
-     * @param _createBefore game can be only created before this timestamp.
-     * @param _serverEndHash last entry of server's hash chain.
-     * @param _serverSig server signature. See verifyCreateSig
+     * @param _userEndHash Last entry of users' hash chain.
+     * @param _previousGameId User's previous game id, initial 0.
+     * @param _createBefore Game can be only created before this timestamp.
+     * @param _serverEndHash Last entry of server's hash chain.
+     * @param _serverSig Server signature. See verifyCreateSig
      */
     function createGame(
         bytes32 _userEndHash,
@@ -173,11 +173,11 @@ contract GameChannel is GameChannelConflict {
 
     /**
      * @dev Verify server signature.
-     * @param _userAddress user's address.
-     * @param _previousGameId user's previous game id, initial 0.
-     * @param _createBefore game can be only created before this timestamp.
-     * @param _serverEndHash last entry of server's hash chain.
-     * @param _serverSig server signature.
+     * @param _userAddress User's address.
+     * @param _previousGameId User's previous game id, initial 0.
+     * @param _createBefore Game can be only created before this timestamp.
+     * @param _serverEndHash Last entry of server's hash chain.
+     * @param _serverSig Server signature.
      */
     function verifyCreateSig(
         address _userAddress,
