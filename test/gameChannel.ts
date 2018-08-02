@@ -154,7 +154,7 @@ contract('GameChannel', accounts => {
                     ...defaultData, num: 1
                 },
             'invalid value': {
-                    ...defaultData, value: new BigNumber(1)
+                    ...defaultData, value: new BigNumber(1e9)
             },
             'invalid contract address': {
                     ...defaultData, contractAddress: () => accounts[5]
@@ -180,7 +180,7 @@ contract('GameChannel', accounts => {
                     d.gameId, d.contractAddress(), d.signer);
 
                 return expect(
-                    gameChannel.serverEndGame(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                    gameChannel.serverEndGame(d.roundId, d.balance, d.serverHash,
                         d.userHash, d.gameId, d.contractAddress(), d.user, sig, {from: d.server})
                 ).to.to.rejectedWith(TRANSACTION_ERROR);
             });
@@ -197,7 +197,7 @@ contract('GameChannel', accounts => {
                 gameChannel.address, user);
 
             return expect(
-                gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+                gameChannel.serverEndGame(roundId, balance, serverHash, userHash, gameId,
                     contractAddress, user, sig, {from: user})
             ).to.to.rejectedWith(TRANSACTION_ERROR);
         });
@@ -209,7 +209,7 @@ contract('GameChannel', accounts => {
             await gameChannel.userCancelActiveGame(gameId, {from: user});
 
             return expect(
-                gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+                gameChannel.serverEndGame(roundId, balance, serverHash, userHash, gameId,
                     contractAddress, user, sig, {from: server})
             ).to.be.rejectedWith(TRANSACTION_ERROR);
         });
@@ -219,7 +219,7 @@ contract('GameChannel', accounts => {
                 gameChannel.address, user);
 
             const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-            await gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            await gameChannel.serverEndGame(roundId, balance, serverHash, userHash, gameId,
                 contractAddress, user, sig, {from: server});
 
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
@@ -281,7 +281,7 @@ contract('GameChannel', accounts => {
                     ...defaultData, num: 1
             },
             'invalid value': {
-                    ...defaultData, value: new BigNumber(1)
+                    ...defaultData, value: new BigNumber(1e9)
             },
             'invalid contract address': {
                     ...defaultData, contractAddress: () => accounts[5]
@@ -304,7 +304,7 @@ contract('GameChannel', accounts => {
                     d.gameId, d.contractAddress(), d.signer);
 
                 return expect(
-                    gameChannel.userEndGame(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                    gameChannel.userEndGame(d.roundId, d.balance, d.serverHash,
                         d.userHash, d.gameId, d.contractAddress(), sig, {from: d.user})
                 ).to.to.rejectedWith(TRANSACTION_ERROR);
             });
@@ -318,7 +318,7 @@ contract('GameChannel', accounts => {
                 gameChannel.address, server);
 
             return expect(
-                gameChannel.userEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+                gameChannel.userEndGame(roundId, balance, serverHash, userHash, gameId,
                     contractAddress, sig, {from: user})
             ).to.to.rejectedWith(TRANSACTION_ERROR);
         });
@@ -330,7 +330,7 @@ contract('GameChannel', accounts => {
             await gameChannel.userCancelActiveGame(gameId, {from: user});
 
             return expect(
-                gameChannel.userEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+                gameChannel.userEndGame(roundId, balance, serverHash, userHash, gameId,
                     contractAddress, sig, {from: user})
             ).to.rejectedWith(TRANSACTION_ERROR);
         });
@@ -340,7 +340,7 @@ contract('GameChannel', accounts => {
                 gameChannel.address, server);
 
             const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
-            await gameChannel.userEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            await gameChannel.userEndGame(roundId, balance, serverHash, userHash, gameId,
                 contractAddress, sig, {from: user});
 
             const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);

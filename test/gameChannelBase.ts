@@ -43,7 +43,7 @@ const createProfitAsync = async (gameChannel: any, user: string, server: string,
     const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
             contractAddress, user);
 
-    await gameChannel.serverEndGame(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+    await gameChannel.serverEndGame(roundId, balance, serverHash, userHash, gameId,
         contractAddress, user, sig, {from: server});
 };
 
