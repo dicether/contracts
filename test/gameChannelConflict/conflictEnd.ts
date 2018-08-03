@@ -11,7 +11,7 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {CONFLICT_END_FINE, MAX_BALANCE, MAX_STAKE} from "../utils/config";
+import {CONFLICT_END_FINE, HOUSE_STAKE, MAX_BALANCE, MAX_STAKE} from "../utils/config";
 import {signData} from "../utils/signUtil";
 import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
 
@@ -49,6 +49,7 @@ contract('GameChannelConflict', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
+        await gameChannel.addHouseStake({from: owner, value: HOUSE_STAKE});
         await gameChannel.activate({from: owner});
         await gameChannel.unpause({from: owner});
     });

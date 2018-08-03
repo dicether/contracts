@@ -30,6 +30,7 @@ contract('GameChannel', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
+        await gameChannel.addHouseStake({from: owner, value: HOUSE_STAKE});
         await gameChannel.activate({from: owner});
         await gameChannel.unpause({from: owner});
     });

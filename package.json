@@ -7,8 +7,9 @@
     "build": "tsc",
     "lint": "tslint --project .",
     "compile": "truffle compile",
-    "migrate": "truffle migrate --network development",
-    "mocha": " truffle test --network development ./lib/test/**/*.js ./lib/test/*.js",
+    "migrate-development": "truffle migrate --network development",
+    "migrate-test": "truffle migrate --network test",
+    "mocha": " truffle test --network test ./lib/test/**/*.js ./lib/test/*.js",
     "test": "run-s build mocha",
     "clean": "shx rm -r ./lib"
   },

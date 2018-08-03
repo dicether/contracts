@@ -7,7 +7,7 @@ module.exports = function(deployer, network, accounts) {
     let serverAccount = "";
     let houseAccount = "";
     let chainId = 123456789;
-    if (network === "development") {
+    if (network === "development" || network === "test") {
         serverAccount = accounts[1];
         houseAccount = accounts[4];
         chainId = 123456789;
@@ -31,7 +31,11 @@ module.exports = function(deployer, network, accounts) {
         return GameChannel.deployed();
     }).then(gameChannel => {
         if (network === "development") {
-            gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('10e18')});
+            return gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('10e18')}).then(() => {
+                return gameChannel.activate({from: accounts[0]});
+            }).then(() => {
+                return gameChannel.unpause({from: accounts[0]});
+            });
         }
-     });
+    });
 };

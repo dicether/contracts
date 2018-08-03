@@ -60,6 +60,7 @@ contract('GameChannelBase', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
+        await gameChannel.addHouseStake({from: owner, value: HOUSE_STAKE});
     });
 
     beforeEach(async () => {
