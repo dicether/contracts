@@ -30,12 +30,15 @@ contract ConflictResolution is ConflictResolutionInterface {
 
     uint public constant MAX_BET_VALUE = 2e16; /// max 0.02 ether bet
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
+    uint public constant MIN_BANKROLL = 8e18;
 
     int public constant NOT_ENDED_FINE = 1e15; /// 0.001 ether
 
     int public constant CONFLICT_END_FINE = 1e15; /// 0.001 ether
 
-    int public constant MAX_BALANCE = int(MAX_BET_VALUE) * 100 * 5;
+    uint public constant PROBABILITY_DIVISOR = 10000;
+
+    int public constant MAX_BALANCE = int(MIN_BANKROLL / 2);
 
     modifier onlyValidBet(uint8 _gameType, uint _betNum, uint _betValue) {
         require(isValidBet(_gameType, _betNum, _betValue), "inv bet");
@@ -48,6 +51,29 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
+     * @dev Calc max bet we allow
+     * We definitely do not allow bets greater than kelly criterion would allow.
+     * The max bet is further restricted on backend.
+     * Calculation: e: houseEdge, q Probability for house to win, p probability for user to win, b bankroll.
+     * f = e / (1/q * (e+1) - 1)
+     * => f =  e / ((1/(1-p) * (e+1) - 1)
+     * => maxBet = f * (1/(1-p) - 1) (ignoring houseEdge factor (e + 1)) * b
+     * => maxBet = e / ((1/(1-p) * (e+1) - 1) * (1/(1-p) - 1) * b
+     * => maxBet = e * p / (e+p) * b
+     *
+     * @param _winProbability winProbability.
+     * @return max allowed bet.
+     */
+    function maxBet(uint _winProbability) public pure returns(uint) {
+        assert(0 < _winProbability && _winProbability < PROBABILITY_DIVISOR);
+
+        uint enumerator = HOUSE_EDGE.mul(_winProbability).mul(MIN_BANKROLL);
+        uint denominator = HOUSE_EDGE.mul(PROBABILITY_DIVISOR).add(_winProbability.mul(HOUSE_EDGE_DIVISOR));
+
+        return enumerator.div(denominator).add(5e15).div(1e16).mul(1e16); // round to multiple of 0.01 Ether
+    }
+
+    /**
      * @dev Check if bet is valid.
      * @param _gameType Game type.
      * @param _betNum Number of bet.
@@ -55,18 +81,20 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @return True if bet is valid false otherwise.
      */
     function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) public pure returns(bool) {
-        bool validValue = MIN_BET_VALUE <= _betValue && _betValue <= MAX_BET_VALUE;
+        bool validMinBetValue = MIN_BET_VALUE <= _betValue;
         bool validGame = false;
 
         if (_gameType == DICE_LOWER) {
             validGame = _betNum > 0 && _betNum < DICE_RANGE - 1;
+            validGame = validGame && _betValue <= maxBet(_betNum * PROBABILITY_DIVISOR / DICE_RANGE);
         } else if (_gameType == DICE_HIGHER) {
             validGame = _betNum > 0 && _betNum < DICE_RANGE - 1;
+            validGame = validGame && _betValue <= maxBet((DICE_RANGE - _betNum - 1) * PROBABILITY_DIVISOR / DICE_RANGE);
         } else {
             validGame = false;
         }
 
-        return validValue && validGame;
+        return validMinBetValue && validGame;
     }
 
     /**
@@ -87,7 +115,7 @@ contract ConflictResolution is ConflictResolutionInterface {
      * Calculate minimum needed house stake.
      */
     function minHouseStake(uint activeGames) public pure returns(uint) {
-        return  MathUtil.min(activeGames, 1) * MAX_BET_VALUE * 400;
+        return  MathUtil.min(activeGames, 1) * MIN_BANKROLL;
     }
 
     /**

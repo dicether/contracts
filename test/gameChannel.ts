@@ -6,7 +6,7 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MIN_STAKE} from './utils/config';
+import {INITIAL_HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MIN_STAKE} from './utils/config';
 import {configureChai, createGame, TRANSACTION_ERROR} from './utils/util';
 
 
@@ -30,7 +30,7 @@ contract('GameChannel', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
-        await gameChannel.addHouseStake({from: owner, value: HOUSE_STAKE});
+        await gameChannel.addHouseStake({from: owner, value: INITIAL_HOUSE_STAKE});
         await gameChannel.activate({from: owner});
         await gameChannel.unpause({from: owner});
     });
@@ -45,7 +45,7 @@ contract('GameChannel', accounts => {
 
     describe('createGame', () => {
         it("Should fail if house stake too low", async () => {
-            await gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner});
+            await gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner});
 
             return expect(createGame(gameChannel, server, user, hash, hash, MIN_STAKE)).to.be.rejectedWith(TRANSACTION_ERROR);
         });

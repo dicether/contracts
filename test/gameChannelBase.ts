@@ -4,7 +4,7 @@ import * as chai from 'chai';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
 import {
-    HOUSE_STAKE,
+    INITIAL_HOUSE_STAKE,
     MAX_STAKE,
     MIN_STAKE,
     PROFIT_TRANSFER_TIMESPAN,
@@ -60,7 +60,7 @@ contract('GameChannelBase', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
-        await gameChannel.addHouseStake({from: owner, value: HOUSE_STAKE});
+        await gameChannel.addHouseStake({from: owner, value: INITIAL_HOUSE_STAKE});
     });
 
     beforeEach(async () => {
@@ -178,7 +178,7 @@ contract('GameChannelBase', accounts => {
 
             it('Should fail if below min house stake', async () => {
                 await createGame(gameChannel, server, user, hash, hash, MAX_STAKE);
-                return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
+                return expect(gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner}))
                     .to.be.rejectedWith(TRANSACTION_ERROR)
             });
 
@@ -186,16 +186,16 @@ contract('GameChannelBase', accounts => {
                 const profit = PROFIT.negated();
                 await createProfitAsync(gameChannel, user, server, profit);
 
-                return expect(gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner}))
+                return expect(gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner}))
                     .to.be.rejectedWith(TRANSACTION_ERROR)
             });
 
             it('Should succeed', async () => {
                 const prevBalance = await web3.eth.getBalance(owner);
-                await gameChannel.withdrawHouseStake(HOUSE_STAKE, {from: owner});
+                await gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner});
                 const afterBalance = await web3.eth.getBalance(owner);
 
-                expect(afterBalance).to.be.bignumber.greaterThan(prevBalance.add(HOUSE_STAKE)
+                expect(afterBalance).to.be.bignumber.greaterThan(prevBalance.add(INITIAL_HOUSE_STAKE)
                     .sub('0.1e18').toNumber()); // gas price
 
                 const newHouseStake = await gameChannel.houseStake.call();

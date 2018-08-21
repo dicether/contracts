@@ -2,7 +2,7 @@ import {GameStatus, ReasonEnded} from '@dicether/state-channel';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {HOUSE_STAKE, MAX_STAKE, NOT_ENDED_FINE} from "../utils/config";
+import {INITIAL_HOUSE_STAKE, MAX_STAKE, NOT_ENDED_FINE} from "../utils/config";
 import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
 import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
 
@@ -24,7 +24,7 @@ contract('GameChannelConflict', accounts => {
 
     before(async () => {
         gameChannel = await GameChannel.deployed();
-        await gameChannel.addHouseStake({from: owner, value: HOUSE_STAKE});
+        await gameChannel.addHouseStake({from: owner, value: INITIAL_HOUSE_STAKE});
         await gameChannel.activate({from: owner});
         await gameChannel.unpause({from: owner});
     });

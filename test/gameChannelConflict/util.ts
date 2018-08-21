@@ -1,7 +1,7 @@
 import {BigNumber} from "bignumber.js";
 import * as chai from "chai";
-
-import {MAX_VALUE} from "../utils/config";
+import {fromGweiToWei, fromWeiToGwei, maxBet, maxBetFromProbability} from "@dicether/state-channel";
+import {MIN_BANKROLL} from "../utils/config";
 
 
 const expect = chai.expect;
@@ -22,7 +22,7 @@ export const shash2 = web3.sha3(shash1,
 export const shash3 = web3.sha3(shash2,
     {encoding: "hex"});
 
-export const BET_VALUE = MAX_VALUE;
+export const BET_VALUE = fromGweiToWei(maxBet(1, 1, fromWeiToGwei(MIN_BANKROLL)));
 
 export async function checkGameStatusAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number) {
     // check game session state
