@@ -30,7 +30,7 @@ contract ConflictResolution is ConflictResolutionInterface {
 
     uint public constant MAX_BET_VALUE = 2e16; /// max 0.02 ether bet
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
-    uint public constant MIN_BANKROLL = 8e18;
+    uint public constant MIN_BANKROLL = 15e18;
 
     int public constant NOT_ENDED_FINE = 1e15; /// 0.001 ether
 

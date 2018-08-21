@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 
 export const WITHDRAW_ALL_TIMEOUT = 3 * 24 * 60 * 60;
-export const INITIAL_HOUSE_STAKE = new BigNumber('10e18');
-export const MIN_BANKROLL = new BigNumber('8e18');
+export const INITIAL_HOUSE_STAKE = new BigNumber('20e18');
+export const MIN_BANKROLL = new BigNumber('15e18');
 export const MIN_STAKE = new BigNumber('1e16');
 export const MAX_STAKE = new BigNumber('5e17');
 export const MIN_VALUE = new BigNumber('1e13');

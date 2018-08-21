@@ -31,7 +31,7 @@ module.exports = function(deployer, network, accounts) {
         return GameChannel.deployed();
     }).then(gameChannel => {
         if (network === "development") {
-            return gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('10e18')}).then(() => {
+            return gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('20e18')}).then(() => {
                 return gameChannel.activate({from: accounts[0]});
             }).then(() => {
                 return gameChannel.unpause({from: accounts[0]});
