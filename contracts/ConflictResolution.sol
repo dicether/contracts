@@ -265,7 +265,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         bytes32 _serverSeed,
         bytes32 _userSeed
     )
-        private
+        public
         pure
         returns (int)
     {
@@ -350,7 +350,7 @@ contract ConflictResolution is ConflictResolutionInterface {
         bytes32 _serverSeed,
         bytes32 _userSeed
     )
-        private
+        public
         pure
         returns(bool)
     {
