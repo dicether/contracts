@@ -305,10 +305,8 @@ contract ConflictResolution is ConflictResolutionInterface {
      * @return user profit in gwei.
      */
     function calcProfitFromTotalWon(uint _totalWon, uint _betValue) private pure returns(int) {
-        // safe to multiply as _totalWon range is fixed.
         uint houseEdgeValue = _totalWon.mul(HOUSE_EDGE).div(HOUSE_EDGE_DIVISOR);
 
-        // safe to cast as all value ranges are fixed
         return _totalWon.castToInt().sub(houseEdgeValue.castToInt()).sub(_betValue.castToInt());
     }
 
@@ -321,7 +319,6 @@ contract ConflictResolution is ConflictResolutionInterface {
     function calculateProfitGameType1(uint _betNum, uint _betValue) private pure returns(int) {
         assert(_betNum > 0 && _betNum < DICE_RANGE);
 
-        // safe as ranges are fixed
         uint totalWon = _betValue.mul(DICE_RANGE).div(_betNum);
         return calcProfitFromTotalWon(totalWon, _betValue);
     }
