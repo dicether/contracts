@@ -33,7 +33,7 @@ export function signData(roundId: number, gameType: number, num: number, value: 
     };
 
     const privKeyBuf = ethUtil.toBuffer(privKey);
-    return signBet(bet, 123456789, contractAddress, privKeyBuf, 2);
+    return signBet(bet, 123456789, contractAddress, privKeyBuf, 1);
 
 }
 

@@ -61,15 +61,17 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     /// @dev Maximal time span between profit transfer.
     uint public constant MAX_TRANSFER_TIMSPAN = 6 * 30 days;
 
-    bytes32 public constant EIP712DOMAIN_TYPEHASH = keccak256(
-        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-    );
-
-    bytes32 public constant BET_TYPEHASH = keccak256(
-        "Bet(uint32 roundId,uint8 gameType,uint256 number,uint256 value,int256 balance,bytes32 serverHash,bytes32 userHash,uint256 gameId)"
-    );
-
-    bytes32 public DOMAIN_SEPERATOR;
+    bytes32 public constant TYPE_HASH = keccak256(abi.encodePacked(
+        "uint32 Round Id",
+        "uint8 Game Type",
+        "uint16 Number",
+        "uint Value (Wei)",
+        "int Current Balance (Wei)",
+        "bytes32 Server Hash",
+        "bytes32 Player Hash",
+        "uint Game Id",
+        "address Contract Address"
+     ));
 
     /// @dev Current active game sessions.
     uint public activeGames = 0;
@@ -179,14 +181,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         lastProfitTransferTimestamp = block.timestamp;
         minStake = _minStake;
         maxStake = _maxStake;
-
-        DOMAIN_SEPERATOR =  keccak256(abi.encode(
-            EIP712DOMAIN_TYPEHASH,
-            keccak256("Dicether"),
-            keccak256("2"),
-            _chainId,
-            address(this)
-        ));
     }
 
     /**
@@ -444,21 +438,20 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         view
         returns(bytes32)
     {
-        bytes32 betHash = keccak256(abi.encode(
-            BET_TYPEHASH,
+        bytes32 betHash = keccak256(abi.encodePacked(
             _roundId,
             _gameType,
-            _num,
+            uint16(_num),
             _value,
             _balance,
             _serverHash,
             _userHash,
-            _gameId
+            _gameId,
+            address(this)
         ));
 
         return keccak256(abi.encodePacked(
-            "\x19\x01",
-            DOMAIN_SEPERATOR,
+            TYPE_HASH,
             betHash
         ));
     }
