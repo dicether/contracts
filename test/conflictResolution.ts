@@ -19,7 +19,7 @@ contract('ConflictResolution', accounts => {
 
     describe('maxBet', async () => {
         it("Should return correct result", async () => {
-             for (let i = 1; i < 100; i++) {
+             for (let i = 1; i < 99; i++) {
                 const winProbability = Math.round(i * 0.01 * PROBABILITY_DIVISOR);
 
                 const maxBet = await conflictResolution.maxBet.call(winProbability);

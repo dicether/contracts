@@ -28,7 +28,6 @@ contract ConflictResolution is ConflictResolutionInterface {
     uint8 public constant DICE_LOWER = 1; ///< @dev dice game lower number wins
     uint8 public constant DICE_HIGHER = 2; ///< @dev dice game higher number wins
 
-    uint public constant MAX_BET_VALUE = 2e16; /// max 0.02 ether bet
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
     uint public constant MIN_BANKROLL = 15e18;
 
@@ -53,24 +52,23 @@ contract ConflictResolution is ConflictResolutionInterface {
     /**
      * @dev Calc max bet we allow
      * We definitely do not allow bets greater than kelly criterion would allow.
-     * The max bet is further restricted on backend.
-     * Calculation: e: houseEdge, q Probability for house to win, p probability for user to win, b bankroll.
-     * f = e / (1/q * (e+1) - 1)
-     * => f =  e / ((1/(1-p) * (e+1) - 1)
-     * => maxBet = f * (1/(1-p) - 1) (ignoring houseEdge factor (e + 1)) * b
-     * => maxBet = e / ((1/(1-p) * (e+1) - 1) * (1/(1-p) - 1) * b
-     * => maxBet = e * p / (e+p) * b
-     *
+     * => The max bet is limited to the max profit of houseEdge * bankroll.
+     * => maxBet = houseEdge / (1/p * (1 - houseEdge) - 1) * bankroll, with p is win probability.
+     * The max bet can be further restricted on backend.
      * @param _winProbability winProbability.
      * @return max allowed bet.
      */
     function maxBet(uint _winProbability) public pure returns(uint) {
         assert(0 < _winProbability && _winProbability < PROBABILITY_DIVISOR);
 
-        uint enumerator = HOUSE_EDGE.mul(_winProbability).mul(MIN_BANKROLL);
-        uint denominator = HOUSE_EDGE.mul(PROBABILITY_DIVISOR).add(_winProbability.mul(HOUSE_EDGE_DIVISOR));
+        uint tmp1 = PROBABILITY_DIVISOR.mul(HOUSE_EDGE_DIVISOR).div(_winProbability);
+        uint tmp2 = PROBABILITY_DIVISOR.mul(HOUSE_EDGE).div(_winProbability);
 
-        return enumerator.div(denominator).add(5e15).div(1e16).mul(1e16); // round to multiple of 0.01 Ether
+        uint enumerator = HOUSE_EDGE.mul(MIN_BANKROLL);
+        uint denominator = tmp1.sub(tmp2).sub(HOUSE_EDGE_DIVISOR);
+        uint maxBetVal = enumerator.div(denominator);
+
+        return maxBetVal.add(5e14).div(1e15).mul(1e15); // round to multiple of 0.001 Ether
     }
 
     /**
