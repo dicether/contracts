@@ -311,7 +311,13 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 },
                 'game type 3 num 2^12 - 2': {
                     ...defaultData, gameType: 3, num: Math.pow(2,12) - 2,
-                }
+                },
+                'game type 4 num 0': {
+                    ...defaultData, gameType: 4, num: 0,
+                },
+                'game type 4 num 1': {
+                    ...defaultData, gameType: 4, num: 1,
+                },
             }, (d: typeof defaultData)  => {
 
             it("should succeed", async () => {

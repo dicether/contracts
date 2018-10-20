@@ -5,6 +5,7 @@ const ConflictResolution = artifacts.require("./ConflictResolution.sol");
 const DiceLower = artifacts.require("./games/DiceLower.sol");
 const DiceHigher = artifacts.require("./games/DiceHigher.sol");
 const ChooseFrom12 = artifacts.require("./games/ChooseFrom12.sol");
+const FlipACoin = artifacts.require("./games/FlipACoin.sol");
 
 
 module.exports = function(deployer, network, accounts) {
@@ -27,8 +28,11 @@ module.exports = function(deployer, network, accounts) {
         throw "Invalid network!"
     }
 
-    deployer.deploy([DiceLower, DiceHigher, ChooseFrom12]).then(() => {
-        return deployer.deploy(ConflictResolution, [DiceLower.address, DiceHigher.address, ChooseFrom12.address], {gas: 2000000});
+    deployer.deploy([DiceLower, DiceHigher, ChooseFrom12, FlipACoin]).then(() => {
+        return deployer.deploy(ConflictResolution,
+            [DiceLower.address, DiceHigher.address, ChooseFrom12.address, FlipACoin.address],
+            {gas: 2000000}
+        );
     }).then(() => {
         return deployer.deploy(GameChannel, serverAccount, 1e16, 5e18, ConflictResolution.address,
             houseAccount, chainId, {gas: 5000000});

@@ -347,7 +347,13 @@ contract('GameChannelConflict', accounts => {
             },
             'game type 3 num 2^12 - 2': {
                 ...defaultData, gameType: 3, num: Math.pow(2,12) - 2,
-            }
+            },
+            'game type 4 num 0': {
+                ...defaultData, gameType: 4, num: 0,
+            },
+            'game type 4 num 1': {
+                ...defaultData, gameType: 4, num: 1,
+            },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
 
@@ -480,6 +486,9 @@ contract('GameChannelConflict', accounts => {
                 },
                 'too high number game type 3': {
                     ...defaultData, gameType: 3, num: Math.pow(2, 12) - 1,
+                },
+                'game type 4 num 1': {
+                    ...defaultData, gameType: 4, num: 2,
                 },
                 'too low balance': {
                     ...defaultData, balance: stake.negated().add(1)
@@ -625,7 +634,13 @@ contract('GameChannelConflict', accounts => {
             },
             'game type 3 num 2^12 - 2': {
                 ...defaultData, gameType: 3, num: Math.pow(2,12) - 2,
-            }
+            },
+            'game type 4 num 0': {
+                ...defaultData, gameType: 4, num: 0,
+            },
+            'game type 4 num 1': {
+                ...defaultData, gameType: 4, num: 1,
+            },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
                 const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
