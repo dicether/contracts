@@ -300,11 +300,17 @@ contract('GameChannelConflict-ForceEnd', accounts => {
         });
 
         withData({
-                'game type 1': {
-                    ...defaultData, gameType: 1
+                'game type 1 num 1': {
+                    ...defaultData, gameType: 1, num: 1
                 },
-                'game type 2': {
-                    ...defaultData, gameType: 2
+                'game type 1 num 98': {
+                    ...defaultData, gameType: 1, num: 98
+                },
+                'game type 2 num 1': {
+                    ...defaultData, gameType: 2, num: 1
+                },
+                'game type 2 num 98': {
+                    ...defaultData, gameType: 2, num: 98
                 },
                 'game type 3 num 1': {
                     ...defaultData, gameType: 3, num: 1,

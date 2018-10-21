@@ -117,10 +117,10 @@ contract('GameChannelConflict', accounts => {
                     ...defaultData, gameType: 1, num: 99,
                 },
                 'too low number game type 2': {
-                    ...defaultData, gameType: 1, num: 0,
+                    ...defaultData, gameType: 2, num: 0,
                 },
                 'too high number game type 2': {
-                    ...defaultData, gameType: 1, num: 99,
+                    ...defaultData, gameType: 2, num: 99,
                 },
                 'too low number game type 3': {
                     ...defaultData, gameType: 3, num: 0,
@@ -476,10 +476,10 @@ contract('GameChannelConflict', accounts => {
                     ...defaultData, gameType: 1, num: 99,
                 },
                 'too low number game type 2': {
-                    ...defaultData, gameType: 1, num: 0,
+                    ...defaultData, gameType: 2, num: 0,
                 },
                 'too high number game type 2': {
-                    ...defaultData, gameType: 1, num: 99,
+                    ...defaultData, gameType: 2, num: 99,
                 },
                 'too low number game type 3': {
                     ...defaultData, gameType: 3, num: 0,
