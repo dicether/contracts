@@ -122,6 +122,12 @@ contract('GameChannelConflict', accounts => {
                 'too high number game type 2': {
                     ...defaultData, gameType: 1, num: 99,
                 },
+                'too low number game type 3': {
+                    ...defaultData, gameType: 3, num: 0,
+                },
+                'too high number game type 3': {
+                    ...defaultData, gameType: 3, num: Math.pow(2, 12) - 1,
+                },
                 'too low balance': {
                     ...defaultData, balance: stake.negated().sub(1)
                 },
@@ -335,6 +341,12 @@ contract('GameChannelConflict', accounts => {
             },
             'game type 2 num 98': {
                 ...defaultData, gameType: 2, num: 98
+            },
+            'game type 3 num 1': {
+                ...defaultData, gameType: 3, num: 1,
+            },
+            'game type 3 num 2^12 - 2': {
+                ...defaultData, gameType: 3, num: Math.pow(2,12) - 2,
             }
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
@@ -462,6 +474,12 @@ contract('GameChannelConflict', accounts => {
                 },
                 'too high number game type 2': {
                     ...defaultData, gameType: 1, num: 99,
+                },
+                'too low number game type 3': {
+                    ...defaultData, gameType: 3, num: 0,
+                },
+                'too high number game type 3': {
+                    ...defaultData, gameType: 3, num: Math.pow(2, 12) - 1,
                 },
                 'too low balance': {
                     ...defaultData, balance: stake.negated().add(1)
@@ -601,6 +619,12 @@ contract('GameChannelConflict', accounts => {
             },
             'game type 2 num 98': {
                 ...defaultData, gameType: 2, num: 98
+            },
+            'game type 3 num 1': {
+                ...defaultData, gameType: 3, num: 1,
+            },
+            'game type 3 num 2^12 - 2': {
+                ...defaultData, gameType: 3, num: Math.pow(2,12) - 2,
             }
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
