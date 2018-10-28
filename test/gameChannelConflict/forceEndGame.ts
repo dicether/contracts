@@ -1,7 +1,7 @@
 import {
     calcUserProfit,
     GameStatus,
-    ReasonEnded, fromWeiToGwei, fromGweiToWei
+    ReasonEnded, fromWeiToGwei, fromGweiToWei, calcMaxUserProfit
 } from '@dicether/state-channel';
 import BigNumber from 'bignumber.js';
 import * as chai from 'chai';
@@ -342,7 +342,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
                 // check new balances (profit, stake, contract balance)
                 const newBalance = BigNumber.max(
-                    d.balance.add(fromGweiToWei(calcUserProfit(d.gameType, d.num, fromWeiToGwei(d.value), true)))
+                    d.balance.add(fromGweiToWei(calcMaxUserProfit(d.gameType, d.num, fromWeiToGwei(d.value))))
                         .add(NOT_ENDED_FINE),
                     stake.negated()
                 );

@@ -2,6 +2,9 @@ const BigNumber = require('bignumber.js');
 
 const GameChannel = artifacts.require("./GameChannel.sol");
 const ConflictResolution = artifacts.require("./ConflictResolution.sol");
+const DiceLower = artifacts.require("./games/DiceLower.sol");
+const DiceHigher = artifacts.require("./games/DiceHigher.sol");
+
 
 module.exports = function(deployer, network, accounts) {
     let serverAccount = "";
@@ -23,7 +26,9 @@ module.exports = function(deployer, network, accounts) {
         throw "Invalid network!"
     }
 
-    deployer.deploy(ConflictResolution, {gas: 2000000}).then(() => {
+    deployer.deploy([DiceLower, DiceHigher, ChooseFrom12]).then(() => {
+        return deployer.deploy(ConflictResolution, [DiceLower.address, DiceHigher.address], {gas: 2000000});
+    }).then(() => {
         return deployer.deploy(GameChannel, serverAccount, 1e16, 5e18, ConflictResolution.address,
             houseAccount, chainId, {gas: 5000000});
 

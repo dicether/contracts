@@ -4,6 +4,7 @@ import "./ConflictResolutionInterface.sol";
 import "./MathUtil.sol";
 import "./SafeCast.sol";
 import "./SafeMath.sol";
+import "./games/Games.sol";
 
 
 /**
@@ -12,21 +13,14 @@ import "./SafeMath.sol";
  * user stops responding during game session.
  * @author dicether
  */
-contract ConflictResolution is ConflictResolutionInterface {
+contract ConflictResolution is ConflictResolutionInterface, Games {
     using SafeCast for int;
     using SafeCast for uint;
     using SafeMath for int;
     using SafeMath for uint;
 
-    uint public constant DICE_RANGE = 100;
-    uint public constant HOUSE_EDGE = 150;
-    uint public constant HOUSE_EDGE_DIVISOR = 10000;
-
     uint public constant SERVER_TIMEOUT = 6 hours;
     uint public constant USER_TIMEOUT = 6 hours;
-
-    uint8 public constant DICE_LOWER = 1; ///< @dev dice game lower number wins
-    uint8 public constant DICE_HIGHER = 2; ///< @dev dice game higher number wins
 
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
     uint public constant MIN_BANKROLL = 15e18;
@@ -34,8 +28,6 @@ contract ConflictResolution is ConflictResolutionInterface {
     int public constant NOT_ENDED_FINE = 1e15; /// 0.001 ether
 
     int public constant CONFLICT_END_FINE = 1e15; /// 0.001 ether
-
-    uint public constant PROBABILITY_DIVISOR = 10000;
 
     int public constant MAX_BALANCE = int(MIN_BANKROLL / 2);
 
@@ -50,49 +42,11 @@ contract ConflictResolution is ConflictResolutionInterface {
     }
 
     /**
-     * @dev Calc max bet we allow
-     * We definitely do not allow bets greater than kelly criterion would allow.
-     * => The max bet is limited to the max profit of houseEdge * bankroll.
-     * => maxBet = houseEdge / (1/p * (1 - houseEdge) - 1) * bankroll, with p is win probability.
-     * The max bet can be further restricted on backend.
-     * @param _winProbability winProbability.
-     * @return max allowed bet.
+     * @dev constructor
+     * @param games the games specific contracts.
      */
-    function maxBet(uint _winProbability) public pure returns(uint) {
-        assert(0 < _winProbability && _winProbability < PROBABILITY_DIVISOR);
-
-        uint tmp1 = PROBABILITY_DIVISOR.mul(HOUSE_EDGE_DIVISOR).div(_winProbability);
-        uint tmp2 = PROBABILITY_DIVISOR.mul(HOUSE_EDGE).div(_winProbability);
-
-        uint enumerator = HOUSE_EDGE.mul(MIN_BANKROLL);
-        uint denominator = tmp1.sub(tmp2).sub(HOUSE_EDGE_DIVISOR);
-        uint maxBetVal = enumerator.div(denominator);
-
-        return maxBetVal.add(5e14).div(1e15).mul(1e15); // round to multiple of 0.001 Ether
-    }
-
-    /**
-     * @dev Check if bet is valid.
-     * @param _gameType Game type.
-     * @param _betNum Number of bet.
-     * @param _betValue Value of bet.
-     * @return True if bet is valid false otherwise.
-     */
-    function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) public pure returns(bool) {
-        bool validMinBetValue = MIN_BET_VALUE <= _betValue;
-        bool validGame = false;
-
-        if (_gameType == DICE_LOWER) {
-            validGame = _betNum > 0 && _betNum < DICE_RANGE - 1;
-            validGame = validGame && _betValue <= maxBet(_betNum * PROBABILITY_DIVISOR / DICE_RANGE);
-        } else if (_gameType == DICE_HIGHER) {
-            validGame = _betNum > 0 && _betNum < DICE_RANGE - 1;
-            validGame = validGame && _betValue <= maxBet((DICE_RANGE - _betNum - 1) * PROBABILITY_DIVISOR / DICE_RANGE);
-        } else {
-            validGame = false;
-        }
-
-        return validMinBetValue && validGame;
+    constructor(address[] games) Games(games) public {
+        // Nothing to do
     }
 
     /**
@@ -105,16 +59,30 @@ contract ConflictResolution is ConflictResolutionInterface {
     /**
      * @return Max balance.
      */
-    function maxBalance() public pure returns(int) {
+    function maxBalance() public view returns(int) {
         return MAX_BALANCE;
     }
 
     /**
      * Calculate minimum needed house stake.
      */
-    function minHouseStake(uint activeGames) public pure returns(uint) {
+    function minHouseStake(uint activeGames) public view returns(uint) {
         return  MathUtil.min(activeGames, 1) * MIN_BANKROLL;
     }
+
+    /**
+     * @dev Check if bet is valid.
+     * @param _gameType Game type.
+     * @param _betNum Number of bet.
+     * @param _betValue Value of bet.
+     * @return True if bet is valid false otherwise.
+     */
+    function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) public view returns(bool) {
+        bool validMinBetValue = MIN_BET_VALUE <= _betValue;
+        bool validMaxBetValue = _betValue <= Games.maxBet(_gameType, _betNum, MIN_BANKROLL);
+        return validMinBetValue && validMaxBetValue;
+    }
+
 
     /**
      * @dev Calculates game result and returns new balance.
@@ -236,7 +204,7 @@ contract ConflictResolution is ConflictResolutionInterface {
             // user cancelled game without playing
             profit = 0;
         } else {
-            profit = calculateProfit(_gameType, _betNum, _betValue); // safe to cast as ranges are limited
+            profit = Games.maxUserProfit(_gameType, _betNum, _betValue);
         }
 
         // penalize server as it didn't end game
@@ -264,126 +232,11 @@ contract ConflictResolution is ConflictResolutionInterface {
         bytes32 _userSeed
     )
         public
-        pure
+        view
         returns (int)
     {
-        bool won = hasUserWon(_gameType, _betNum, _serverSeed, _userSeed);
-        if (!won) {
-            return _balance.sub(_betValue.castToInt());
-        } else {
-            int profit = calculateProfit(_gameType, _betNum, _betValue);
-            return _balance.add(profit);
-        }
-    }
-
-    /**
-     * @dev Calculate user profit.
-     * @param _gameType type of game.
-     * @param _betNum bet numbe.
-     * @param _betValue bet value.
-     * return profit of user
-     */
-    function calculateProfit(uint8 _gameType, uint _betNum, uint _betValue) private pure returns(int) {
-        uint betValueInGwei = _betValue / 1e9; // convert to gwei
-        int res = 0;
-
-        if (_gameType == DICE_LOWER) {
-            res = calculateProfitGameType1(_betNum, betValueInGwei);
-        } else if (_gameType == DICE_HIGHER) {
-            res = calculateProfitGameType2(_betNum, betValueInGwei);
-        } else {
-            assert(false);
-        }
-        return res.mul(1e9); // convert to wei
-    }
-
-    /**
-     * Calculate user profit from total won.
-     * @param _totalWon user winning in gwei.
-     * @return user profit in gwei.
-     */
-    function calcProfitFromTotalWon(uint _totalWon, uint _betValue) private pure returns(int) {
-        uint houseEdgeValue = _totalWon.mul(HOUSE_EDGE).div(HOUSE_EDGE_DIVISOR);
-
-        return _totalWon.castToInt().sub(houseEdgeValue.castToInt()).sub(_betValue.castToInt());
-    }
-
-    /**
-     * @dev Calculate user profit if user has won for game type 1 (dice lower wins).
-     * @param _betNum Bet number of user.
-     * @param _betValue Value of bet in gwei.
-     * @return Users' profit.
-     */
-    function calculateProfitGameType1(uint _betNum, uint _betValue) private pure returns(int) {
-        assert(_betNum > 0 && _betNum < DICE_RANGE);
-
-        uint totalWon = _betValue.mul(DICE_RANGE).div(_betNum);
-        return calcProfitFromTotalWon(totalWon, _betValue);
-    }
-
-    /**
-     * @dev Calculate user profit if user has won for game type 2 (dice lower wins).
-     * @param _betNum Bet number of user.
-     * @param _betValue Value of bet in gwei.
-     * @return Users' profit.
-     */
-    function calculateProfitGameType2(uint _betNum, uint _betValue) private pure returns(int) {
-        assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
-
-        // safe as ranges are fixed
-        uint totalWon = _betValue.mul(DICE_RANGE).div(DICE_RANGE.sub(_betNum).sub(1));
-        return calcProfitFromTotalWon(totalWon, _betValue);
-    }
-
-    /**
-     * @dev Check if user hash won or lost.
-     * @return true if user has won.
-     */
-    function hasUserWon(
-        uint8 _gameType,
-        uint _betNum,
-        bytes32 _serverSeed,
-        bytes32 _userSeed
-    )
-        public
-        pure
-        returns(bool)
-    {
-        bytes32 combinedHash = keccak256(abi.encodePacked(_serverSeed, _userSeed));
-        uint randNum = uint(combinedHash);
-
-        if (_gameType == 1) {
-            return calculateWinnerGameType1(randNum, _betNum);
-        } else if (_gameType == 2) {
-            return calculateWinnerGameType2(randNum, _betNum);
-        } else {
-            assert(false);
-        }
-    }
-
-    /**
-     * @dev Calculate winner of game type 1 (roll lower).
-     * @param _randomNum 256 bit random number.
-     * @param _betNum Bet number.
-     * @return True if user has won false if he lost.
-     */
-    function calculateWinnerGameType1(uint _randomNum, uint _betNum) private pure returns(bool) {
-        assert(_betNum > 0 && _betNum < DICE_RANGE);
-
-        uint resultNum = _randomNum % DICE_RANGE; // bias is negligible
-        return resultNum < _betNum;
-    }
-
-    /**
-     * @dev Calculate winner of game type 2 (roll higher).
-     * @param _randomNum 256 bit random number.
-     * @param _betNum Bet number.
-     * @return True if user has won false if he lost.
-     */
-    function calculateWinnerGameType2(uint _randomNum, uint _betNum) private pure returns(bool) {
-        assert(_betNum >= 0 && _betNum < DICE_RANGE - 1);
-
-        uint resultNum = _randomNum % DICE_RANGE; // bias is negligible
-        return resultNum > _betNum;
+        uint resNum = Games.resultNumber(_gameType, _serverSeed, _userSeed, _betNum);
+        int profit = Games.userProfit(_gameType, _betNum, _betValue, resNum);
+        return _balance.add(profit);
     }
 }

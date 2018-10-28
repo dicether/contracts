@@ -22,7 +22,7 @@
     "truffle": "^4.1.14"
   },
   "devDependencies": {
-    "@dicether/state-channel": "^1.0.0-alpha.5",
+    "@dicether/state-channel": "^1.0.0-alpha.6",
     "@types/chai": "^4.1.2",
     "@types/chai-as-promised": "^7.1.0",
     "@types/mocha": "^2.2.48",

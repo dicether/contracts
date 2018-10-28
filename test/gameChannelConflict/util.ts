@@ -1,6 +1,6 @@
 import {BigNumber} from "bignumber.js";
 import * as chai from "chai";
-import {fromGweiToWei, fromWeiToGwei, maxBet, maxBetFromProbability} from "@dicether/state-channel";
+import {fromGweiToWei, fromWeiToGwei, maxBet} from "@dicether/state-channel";
 import {MIN_BANKROLL} from "../utils/config";
 
 
