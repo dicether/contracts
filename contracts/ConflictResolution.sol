@@ -153,8 +153,8 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
         returns(int)
     {
         require(_endInitiatedTime + SERVER_TIMEOUT <= block.timestamp, "too low timeout");
-        require(isValidBet(_gameType, _betNum, _betValue)
-                || (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0), "inv bet");
+        require((_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0)
+                || isValidBet(_gameType, _betNum, _betValue), "inv bet");
 
 
         // assume user has lost
@@ -196,8 +196,8 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
         returns(int)
     {
         require(_endInitiatedTime + USER_TIMEOUT <= block.timestamp, "too low timeout");
-        require(isValidBet(_gameType, _betNum, _betValue)
-            || (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0), "inv bet");
+        require((_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0)
+                || isValidBet(_gameType, _betNum, _betValue), "inv bet");
 
         int profit = 0;
         if (_gameType == 0 && _betNum == 0 && _betValue == 0 && _balance == 0) {
