@@ -49,7 +49,7 @@ module.exports = async function(deployer, network, accounts) {
         GameChannel,
         serverAccount,
         1e16.toString(),
-        5e18.toString(),
+        200e18.toString(),
         ConflictResolution.address,
         houseAccount,
         chainId,
@@ -59,7 +59,7 @@ module.exports = async function(deployer, network, accounts) {
     const gameChannel = await GameChannel.deployed();
 
     if (network === "development") {
-        await gameChannel.addHouseStake({from: accounts[0], value: 20e18.toString()});
+        await gameChannel.addHouseStake({from: accounts[0], value: 50e18.toString()});
         await gameChannel.activate({from: accounts[0]});
         await gameChannel.unpause({from: accounts[0]});
     }
