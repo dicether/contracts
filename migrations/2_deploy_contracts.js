@@ -6,6 +6,7 @@ const DiceLower = artifacts.require("./games/DiceLower.sol");
 const DiceHigher = artifacts.require("./games/DiceHigher.sol");
 const ChooseFrom12 = artifacts.require("./games/ChooseFrom12.sol");
 const FlipACoin = artifacts.require("./games/FlipACoin.sol");
+const Keno = artifacts.require("./games/Keno.sol");
 
 
 module.exports = async function(deployer, network, accounts) {
@@ -32,15 +33,17 @@ module.exports = async function(deployer, network, accounts) {
     await deployer.deploy(DiceHigher);
     await deployer.deploy(ChooseFrom12);
     await deployer.deploy(FlipACoin);
+    await deployer.deploy(Keno);
 
     await DiceLower.deployed();
     await DiceHigher.deployed();
     await ChooseFrom12.deployed();
     await FlipACoin.deployed();
+    await Keno.deployed();
 
     await deployer.deploy(
         ConflictResolution,
-        [DiceLower.address, DiceHigher.address, ChooseFrom12.address, FlipACoin.address],
+        [DiceLower.address, DiceHigher.address, ChooseFrom12.address, FlipACoin.address, Keno.address],
         {gas: 2000000}
     );
 
