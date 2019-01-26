@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ConflictResolutionInterface.sol";
 import "./MathUtil.sol";
@@ -45,7 +45,7 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
      * @dev constructor
      * @param games the games specific contracts.
      */
-    constructor(address[] games) Games(games) public {
+    constructor(address[] memory games) Games(games) public {
         // Nothing to do
     }
 

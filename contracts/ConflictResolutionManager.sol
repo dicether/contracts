@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ConflictResolutionInterface.sol";
 import "./Ownable.sol";
@@ -13,7 +13,7 @@ contract ConflictResolutionManager is Ownable {
     ConflictResolutionInterface public conflictRes;
 
     /// @dev New Conflict resolution contract.
-    address public newConflictRes = 0;
+    address public newConflictRes = address(0);
 
     /// @dev Time update of new conflict resolution contract was initiated.
     uint public updateTime = 0;
@@ -53,12 +53,12 @@ contract ConflictResolutionManager is Ownable {
      * @dev Active new conflict resolution contract.
      */
     function activateConflictResolution() public onlyOwner {
-        require(newConflictRes != 0);
+        require(newConflictRes != address(0));
         require(updateTime != 0);
         require(updateTime + MIN_TIMEOUT <= block.timestamp && block.timestamp <= updateTime + MAX_TIMEOUT);
 
         conflictRes = ConflictResolutionInterface(newConflictRes);
-        newConflictRes = 0;
+        newConflictRes = address(0);
         updateTime = 0;
 
         emit LogUpdatedConflictResolution(newConflictRes);

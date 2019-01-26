@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./GameChannelBase.sol";
 
@@ -28,7 +28,7 @@ contract GameChannelConflict is GameChannelBase {
         uint128 _minStake,
         uint128 _maxStake,
         address _conflictResAddress,
-        address _houseAddress,
+        address payable _houseAddress,
         uint _chainId
     )
         public
@@ -63,8 +63,8 @@ contract GameChannelConflict is GameChannelBase {
         bytes32 _userHash,
         uint _gameId,
         address _contractAddress,
-        bytes _userSig,
-        address _userAddress,
+        bytes memory _userSig,
+        address payable _userAddress,
         bytes32 _serverSeed,
         bytes32 _userSeed
     )
@@ -124,7 +124,7 @@ contract GameChannelConflict is GameChannelBase {
         bytes32 _userHash,
         uint _gameId,
         address _contractAddress,
-        bytes _serverSig,
+        bytes memory _serverSig,
         bytes32 _userSeed
     )
         public
@@ -162,7 +162,7 @@ contract GameChannelConflict is GameChannelBase {
      * @param _gameId Game session id.
      */
     function userCancelActiveGame(uint _gameId) public {
-        address userAddress = msg.sender;
+        address payable userAddress = msg.sender;
         uint gameId = userGameId[userAddress];
         Game storage game = gameIdGame[gameId];
 
@@ -186,7 +186,7 @@ contract GameChannelConflict is GameChannelBase {
      * @param _userAddress Users' address.
      * @param _gameId Game session id.
      */
-    function serverCancelActiveGame(address _userAddress, uint _gameId) public onlyServer {
+    function serverCancelActiveGame(address payable _userAddress, uint _gameId) public onlyServer {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
 
@@ -209,7 +209,7 @@ contract GameChannelConflict is GameChannelBase {
     * to give the user a chance to respond.
     * @param _userAddress User's address.
     */
-    function serverForceGameEnd(address _userAddress, uint _gameId) public onlyServer {
+    function serverForceGameEnd(address payable _userAddress, uint _gameId) public onlyServer {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
 
@@ -235,7 +235,7 @@ contract GameChannelConflict is GameChannelBase {
     * to give the server a chance to respond.
     */
     function userForceGameEnd(uint _gameId) public {
-        address userAddress = msg.sender;
+        address payable userAddress = msg.sender;
         uint gameId = userGameId[userAddress];
         Game storage game = gameIdGame[gameId];
 
@@ -277,7 +277,7 @@ contract GameChannelConflict is GameChannelBase {
         bytes32 _userHash,
         bytes32 _userSeed,
         uint _gameId,
-        address _userAddress
+        address payable _userAddress
     )
         private
     {
@@ -340,7 +340,7 @@ contract GameChannelConflict is GameChannelBase {
         bytes32 _serverSeed,
         bytes32 _userSeed,
         uint _gameId,
-        address _userAddress
+        address payable _userAddress
     )
         private
     {
@@ -384,7 +384,7 @@ contract GameChannelConflict is GameChannelBase {
      * @param _gameId Game session id.
      * @param _userAddress User's address.
      */
-    function cancelActiveGame(Game storage _game, uint _gameId, address _userAddress) private {
+    function cancelActiveGame(Game storage _game, uint _gameId, address payable _userAddress) private {
         // user need to pay a fee when conflict ended.
         // this ensures a malicious, rich user can not just generate game sessions and then wait
         // for us to end the game session and then confirm the session status, so
@@ -405,7 +405,7 @@ contract GameChannelConflict is GameChannelBase {
      * @param _gameId Game session id.
      * @param _userAddress User's address.
      */
-    function endGameConflict(Game storage _game, uint _gameId, address _userAddress) private {
+    function endGameConflict(Game storage _game, uint _gameId, address payable _userAddress) private {
         int newBalance = conflictRes.endGameConflict(
             _game.gameType,
             _game.betNum,

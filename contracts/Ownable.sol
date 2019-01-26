@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 
 /**
@@ -7,8 +7,8 @@ pragma solidity ^0.4.24;
  * @author dicether
  */
 contract Ownable {
-    address public owner;
-    address public pendingOwner;
+    address payable public owner;
+    address payable public pendingOwner;
 
     event LogOwnerShipTransferred(address indexed previousOwner, address indexed newOwner);
     event LogOwnerShipTransferInitiated(address indexed previousOwner, address indexed newOwner);
@@ -41,7 +41,7 @@ contract Ownable {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param _newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address _newOwner) public onlyOwner {
+    function transferOwnership(address payable _newOwner) public onlyOwner {
         pendingOwner = _newOwner;
         emit LogOwnerShipTransferInitiated(owner, _newOwner);
     }

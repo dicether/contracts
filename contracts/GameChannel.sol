@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./GameChannelConflict.sol";
 
@@ -22,7 +22,7 @@ contract GameChannel is GameChannelConflict {
         uint128 _minStake,
         uint128 _maxStake,
         address _conflictResAddress,
-        address _houseAddress,
+        address payable _houseAddress,
         uint _chainId
     )
         public
@@ -44,7 +44,7 @@ contract GameChannel is GameChannelConflict {
         uint _previousGameId,
         uint _createBefore,
         bytes32 _serverEndHash,
-        bytes _serverSig
+        bytes memory _serverSig
     )
         public
         payable
@@ -97,8 +97,8 @@ contract GameChannel is GameChannelConflict {
         bytes32 _userHash,
         uint _gameId,
         address _contractAddress,
-        address _userAddress,
-        bytes _userSig
+        address payable _userAddress,
+        bytes memory _userSig
     )
         public
         onlyServer
@@ -138,7 +138,7 @@ contract GameChannel is GameChannelConflict {
         bytes32 _userHash,
         uint _gameId,
         address _contractAddress,
-        bytes _serverSig
+        bytes memory _serverSig
     )
         public
     {
@@ -172,11 +172,11 @@ contract GameChannel is GameChannelConflict {
         uint _previousGameId,
         uint _createBefore,
         bytes32 _serverEndHash,
-        bytes _serverSig
+        bytes memory _serverSig
     )
         private view
     {
-        address contractAddress = this;
+        address contractAddress = address(this);
         bytes32 hash = keccak256(abi.encodePacked(
             contractAddress, _userAddress, _previousGameId, _createBefore, _serverEndHash
         ));
@@ -194,7 +194,7 @@ contract GameChannel is GameChannelConflict {
      * @param _contractAddress Address of this contract.
      */
     function regularEndGame(
-        address _userAddress,
+        address payable _userAddress,
         uint32 _roundId,
         int _balance,
         uint _gameId,

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../SafeMath.sol";
 import "./GameInterface.sol";
@@ -14,7 +14,7 @@ contract Games {
      * @dev constructor
      * @param gameContracts addresses of different game implementations.
      */
-    constructor (address[] gameContracts) public {
+    constructor(address[] memory gameContracts) public {
         for (uint i = 0; i < gameContracts.length; i++) {
             // set first GameInterface to 0 0 => start with i + 1
             games[i + 1] = GameInterface(gameContracts[i]);

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ConflictResolutionInterface.sol";
 import "./ConflictResolutionManager.sol";
@@ -82,7 +82,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
     address public serverAddress;
 
     /// @dev Address to transfer profit to.
-    address public houseAddress;
+    address payable public houseAddress;
 
     /// @dev Current house stake.
     uint public houseStake = 0;
@@ -166,7 +166,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         uint128 _minStake,
         uint128 _maxStake,
         address _conflictResAddress,
-        address _houseAddress,
+        address payable _houseAddress,
         uint _chainId
     )
         public
@@ -275,7 +275,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @dev Set new house address.
      * @param _houseAddress New house address.
      */
-    function setHouseAddress(address _houseAddress) public onlyOwner {
+    function setHouseAddress(address payable _houseAddress) public onlyOwner {
         houseAddress = _houseAddress;
     }
 
@@ -303,7 +303,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         Game storage _game,
         uint _gameId,
         uint32 _roundId,
-        address _userAddress,
+        address payable _userAddress,
         ReasonEnded _reason,
         int _balance
     )
@@ -324,7 +324,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _stake User's stake.
      * @param _balance User's balance.
      */
-    function payOut(address _userAddress, uint128 _stake, int _balance) internal {
+    function payOut(address payable _userAddress, uint128 _stake, int _balance) internal {
         int stakeInt = _stake;
         int houseStakeInt = houseStake.castToInt();
 
@@ -354,7 +354,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @dev Send value of pendingReturns[_address] to _address.
      * @param _address Address to send value to.
      */
-    function safeSend(address _address) internal {
+    function safeSend(address payable _address) internal {
         uint valueToSend = pendingReturns[_address];
         assert(valueToSend > 0);
 
@@ -379,14 +379,14 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         bytes32 _userHash,
         uint _gameId,
         address _contractAddress,
-        bytes _sig,
+        bytes memory _sig,
         address _address
     )
         internal
         view
     {
         // check if this is the correct contract
-        address contractAddress = this;
+        address contractAddress = address(this);
         require(_contractAddress == contractAddress, "inv contractAddress");
 
         bytes32 roundHash = calcHash(
@@ -415,7 +415,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      */
     function verify(
         bytes32 _hash,
-        bytes _sig,
+        bytes memory _sig,
         address _address
     )
         internal
@@ -469,7 +469,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _signature Signature to split.
      * @return r s v
      */
-    function signatureSplit(bytes _signature)
+    function signatureSplit(bytes memory _signature)
         private
         pure
         returns (bytes32 r, bytes32 s, uint8 v)
