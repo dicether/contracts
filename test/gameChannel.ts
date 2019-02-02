@@ -1,13 +1,12 @@
-import {signData, signStartData} from "./utils/signUtil";
-
 const GameChannel = artifacts.require("./GameChannel.sol");
-import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from './utils/BlockchainLifecycle';
 import {INITIAL_HOUSE_STAKE, MAX_BALANCE, MAX_STAKE, MIN_STAKE} from './utils/config';
-import {configureChai, createGame, TRANSACTION_ERROR} from './utils/util';
+import {signData, signStartData} from "./utils/signUtil";
+import {configureChai, createGame, getBalance, TRANSACTION_ERROR} from './utils/util';
 
 
 configureChai();
@@ -51,12 +50,12 @@ contract('GameChannel', accounts => {
         });
 
         it("Should fail if value too low", async () => {
-            return expect(createGame(gameChannel, server, user, hash, hash, MIN_STAKE.sub(1))).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(createGame(gameChannel, server, user, hash, hash, MIN_STAKE.subn(1))).to.be.rejectedWith(TRANSACTION_ERROR);
 
         });
 
         it("Should fail if value too high", async () => {
-            return expect(createGame(gameChannel, server, user, hash, hash, MAX_STAKE.add(1))).to.be.rejectedWith(TRANSACTION_ERROR);
+            return expect(createGame(gameChannel, server, user, hash, hash, MAX_STAKE.addn(1))).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
         it("Should fail if game paused", async () => {
@@ -91,20 +90,20 @@ contract('GameChannel', accounts => {
         });
 
         it("Create game should succeed", async () => {
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             await createGame(gameChannel, server, user, hash, hash, MIN_STAKE);
             const game = await gameChannel.gameIdGame.call(1);
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
 
             const status = game[0].toNumber();
             const stake = game[1];
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.add(MIN_STAKE));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.add(MIN_STAKE));
             expect(status).to.equal(1); // active
-            expect(stake).to.be.bignumber.equal(MIN_STAKE);
+            expect(stake).to.eq.BN(MIN_STAKE);
 
             const activeGames = await gameChannel.activeGames.call();
-            expect(activeGames).to.be.bignumber.equal(1);
+            expect(activeGames).to.eq.BN(1);
         })
     });
 
@@ -115,8 +114,8 @@ contract('GameChannel', accounts => {
         const roundId = 10;
         const gameType = 0;
         const num = 0;
-        const value = new BigNumber(0);
-        const balance = stake.div(2);
+        const value = new BN(0);
+        const balance = stake.divn(2);
         const serverHash = hash;
         const userHash = hash;
         let contractAddress: string;
@@ -155,7 +154,7 @@ contract('GameChannel', accounts => {
                     ...defaultData, num: 1
                 },
             'invalid value': {
-                    ...defaultData, value: new BigNumber(1e9)
+                    ...defaultData, value: new BN(1e9)
             },
             'invalid contract address': {
                     ...defaultData, contractAddress: () => accounts[5]
@@ -170,10 +169,10 @@ contract('GameChannel', accounts => {
                 ...defaultData, server: notServer
             },
             'balance too low': {
-                ...defaultData, balance: stake.negated().sub(1)
+                ...defaultData, balance: stake.neg().subn(1)
             },
             'balance too high': {
-                ...defaultData, balance: MAX_BALANCE.add(1)
+                ...defaultData, balance: MAX_BALANCE.addn(1)
             }
         }, (d: typeof defaultData) => {
             it("Should fail", async () => {
@@ -219,21 +218,21 @@ contract('GameChannel', accounts => {
             const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, user);
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             await gameChannel.serverEndGame(roundId, balance, serverHash, userHash, gameId,
                 contractAddress, user, sig, {from: server});
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
 
             const game = await gameChannel.gameIdGame.call(gameId);
 
             const status = game[0].toNumber();
 
             expect(status).to.equal(0); // active
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).sub(balance));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).sub(balance));
 
             const activeGames = await gameChannel.activeGames.call();
-            expect(activeGames).to.be.bignumber.equal(0);
+            expect(activeGames).to.eq.BN(0);
         });
     });
 
@@ -244,8 +243,8 @@ contract('GameChannel', accounts => {
         const roundId = 10;
         const gameType = 0;
         const num = 0;
-        const value = new BigNumber(0);
-        const balance = stake.div(2);
+        const value = new BN(0);
+        const balance = stake.divn(2);
         const serverHash = hash;
         const userHash = hash;
         let contractAddress: string;
@@ -282,7 +281,7 @@ contract('GameChannel', accounts => {
                     ...defaultData, num: 1
             },
             'invalid value': {
-                    ...defaultData, value: new BigNumber(1e9)
+                    ...defaultData, value: new BN(1e9)
             },
             'invalid contract address': {
                     ...defaultData, contractAddress: () => accounts[5]
@@ -294,10 +293,10 @@ contract('GameChannel', accounts => {
                     ...defaultData, roundId: 0
             },
             'balance too low': {
-                ...defaultData, balance: stake.negated().sub(1)
+                ...defaultData, balance: stake.neg().subn(1)
             },
             'balance too high': {
-                ...defaultData, balance: MAX_BALANCE.add(1)
+                ...defaultData, balance: MAX_BALANCE.addn(1)
             }
         }, (d: typeof defaultData) => {
             it("Should fail", async () => {
@@ -340,21 +339,21 @@ contract('GameChannel', accounts => {
             const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, server);
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             await gameChannel.userEndGame(roundId, balance, serverHash, userHash, gameId,
                 contractAddress, sig, {from: user});
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
 
             const game = await gameChannel.gameIdGame.call(gameId);
 
             const status = game[0].toNumber();
 
             expect(status).to.equal(0); // active
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).sub(balance));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).sub(balance));
 
             const activeGames = await gameChannel.activeGames.call();
-            expect(activeGames).to.be.bignumber.equal(0);
+            expect(activeGames).to.eq.BN(0);
         });
     });
 });

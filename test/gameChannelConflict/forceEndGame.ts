@@ -3,14 +3,14 @@ import {
     GameStatus,
     ReasonEnded, fromWeiToGwei, fromGweiToWei, calcMaxUserProfit
 } from '@dicether/state-channel';
-import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {MAX_STAKE, NOT_ENDED_FINE, USER_TIMEOUT, SERVER_TIMEOUT, INITIAL_HOUSE_STAKE} from "../utils/config";
 import {signData} from "../utils/signUtil";
-import {configureChai, createGame, increaseTimeAsync, TRANSACTION_ERROR} from '../utils/util';
+import {configureChai, createGame, getBalance, increaseTimeAsync, max, TRANSACTION_ERROR} from '../utils/util';
 import {
     BET_VALUE,
     checkActiveGamesAsync,
@@ -74,7 +74,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             gameType: 1,
             num: 80,
             value: BET_VALUE,
-            balance: stake.idiv(2),
+            balance: stake.divn(2),
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
@@ -188,24 +188,24 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 {from: d.from}
             );
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
             await increaseTimeAsync(SERVER_TIMEOUT);
             await gameChannel.serverForceGameEnd(user, d.gameId, {from: server});
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
             // check new balances (profit, stake, contract balance)
-            const newBalance = BigNumber.max(d.balance.sub(d.value).sub(NOT_ENDED_FINE), stake.negated());
+            const newBalance = max(d.balance.sub(d.value).sub(NOT_ENDED_FINE), stake.neg());
             const payout = stake.add(newBalance);
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
+            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
+            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.SERVER_FORCED_END);
 
@@ -215,26 +215,30 @@ contract('GameChannelConflict-ForceEnd', accounts => {
         it("Force end should succeed after cancelActiveGame", async () => {
             const d = defaultData;
 
+            console.log("ServeEndGameCOnflict", d.gameType)
             await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
+            console.log("Ended!");
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
             await increaseTimeAsync(SERVER_TIMEOUT);
+            console.log("Force End", d.gameType)
             await gameChannel.serverForceGameEnd(user, d.gameId, {from: server});
+            console.log("Force Ended", d.gameType)
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
             // check new balances (profit, stake, contract balance)
-            const newBalance = BigNumber.max(NOT_ENDED_FINE.negated(), stake.negated());
+            const newBalance = max(NOT_ENDED_FINE.neg(), stake.neg());
             const payout = stake.add(newBalance);
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
+            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
+            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.SERVER_FORCED_END);
 
@@ -262,7 +266,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             gameType: 1,
             num: 80,
             value: BET_VALUE,
-            balance: stake.idiv(2),
+            balance: stake.divn(2),
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
@@ -378,27 +382,28 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
                 await increaseTimeAsync(USER_TIMEOUT);
 
-                const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceBefore = await getBalance(gameChannel.address);
                 const houseProfitBefore = await gameChannel.houseProfit.call();
                 const houseStakeBefore = await gameChannel.houseStake.call();
 
                 await gameChannel.userForceGameEnd(d.gameId, {from: user});
 
-                const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceAfter = await getBalance(gameChannel.address);
                 const houseProfitAfter = await gameChannel.houseProfit.call();
                 const houseStakeAfter = await gameChannel.houseStake.call();
 
                 // check new balances (profit, stake, contract balance)
-                const newBalance = BigNumber.max(
-                    d.balance.add(fromGweiToWei(calcMaxUserProfit(d.gameType, d.num, fromWeiToGwei(d.value))))
+                const newBalance = max(
+                    d.balance
+                        .add(new BN(fromGweiToWei(calcMaxUserProfit(d.gameType, d.num, fromWeiToGwei(d.value.toString())))))
                         .add(NOT_ENDED_FINE),
-                    stake.negated()
+                    stake.neg()
                 );
                 const payout = stake.add(newBalance);
 
-                expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-                expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-                expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+                expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
+                expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
+                expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
 
                 await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.USER_FORCED_END);
 
@@ -410,13 +415,13 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
                 await increaseTimeAsync(USER_TIMEOUT);
 
-                const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceBefore = await getBalance(gameChannel.address);
                 const houseProfitBefore = await gameChannel.houseProfit.call();
                 const houseStakeBefore = await gameChannel.houseStake.call();
 
                 await gameChannel.userForceGameEnd(d.gameId, {from: user});
 
-                const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceAfter = await getBalance(gameChannel.address);
                 const houseProfitAfter = await gameChannel.houseProfit.call();
                 const houseStakeAfter = await gameChannel.houseStake.call();
 
@@ -424,9 +429,9 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 const newBalance = NOT_ENDED_FINE;
                 const payout = stake.add(newBalance);
 
-                expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-                expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-                expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+                expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
+                expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
+                expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
 
                 await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.USER_FORCED_END);
 

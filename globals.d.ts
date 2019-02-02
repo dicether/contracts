@@ -1,3 +1,5 @@
+
+
 declare module 'eth-sig-util' {
     type Data = { type: string, name: string, value: any }[];
 
@@ -28,9 +30,22 @@ declare module "chai-bignumber" {
     export = chaiBignumber;
 }
 
+declare module "bn-chai" {
+    function bnChai(bignumber?: any): (chai: any, utils: any) => void;
+
+    namespace bnChai {
+
+    }
+
+    export = bnChai;
+}
+
 declare namespace Chai {
-    // For BDD API
-    interface Assertion extends LanguageChains, NumericComparison, TypeComparison {
-        bignumber: Assertion;
+    interface Equal extends Assertion, NumericComparison {
+        BN: any,
+    }
+
+    interface NumberComparer extends NumericComparison {
+        BN: any,
     }
 }

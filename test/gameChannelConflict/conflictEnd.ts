@@ -6,14 +6,14 @@ import {
     fromWeiToGwei,
     fromGweiToWei
 } from '@dicether/state-channel';
-import BigNumber from 'bignumber.js';
+import BN from 'bn.js';
 import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {CONFLICT_END_FINE, INITIAL_HOUSE_STAKE, MAX_BALANCE, MAX_STAKE} from "../utils/config";
 import {signData} from "../utils/signUtil";
-import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
+import {configureChai, createGame, getBalance, max, TRANSACTION_ERROR} from '../utils/util';
 
 import {
     BET_VALUE,
@@ -79,7 +79,7 @@ contract('GameChannelConflict', accounts => {
             gameType: 1,
             num: 80,
             value: BET_VALUE,
-            balance: stake.idiv(2),
+            balance: stake.divn(2),
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
@@ -129,10 +129,10 @@ contract('GameChannelConflict', accounts => {
                     ...defaultData, gameType: 3, num: Math.pow(2, 12) - 1,
                 },
                 'too low balance': {
-                    ...defaultData, balance: stake.negated().sub(1)
+                    ...defaultData, balance: stake.neg().subn(1)
                 },
                 'too high balance': {
-                    ...defaultData, balance: MAX_BALANCE.add(1)
+                    ...defaultData, balance: MAX_BALANCE.addn(1)
                 },
                 'wrong contract address': {
                     ...defaultData, contractAddress: () => accounts[4],
@@ -375,7 +375,7 @@ contract('GameChannelConflict', accounts => {
                     {from: user}
                 );
 
-                const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceBefore = await getBalance(gameChannel.address);
                 const houseProfitBefore = await gameChannel.houseProfit.call();
                 const houseStakeBefore = await gameChannel.houseStake.call();
 
@@ -399,28 +399,28 @@ contract('GameChannelConflict', accounts => {
                     {from: d.from}
                 );
 
-                const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceAfter = await getBalance(gameChannel.address);
                 const houseProfitAfter = await gameChannel.houseProfit.call();
                 const houseStakeAfter = await gameChannel.houseStake.call();
 
                 // check new balances (profit, stake, contract balance)
-                const newBalance = BigNumber.max(
-                    fromGweiToWei(calcNewBalance(
+                const newBalance = max(
+                    new BN(fromGweiToWei(calcNewBalance(
                         d.gameType,
                         d.num,
-                        fromWeiToGwei(d.value),
+                        fromWeiToGwei(d.value.toString()),
                         d.serverSeed,
                         d.userSeed,
-                        fromWeiToGwei(d.balance)
-                    )).sub(CONFLICT_END_FINE),
-                    stake.negated()
+                        fromWeiToGwei(d.balance.toString())
+                    ))).sub(CONFLICT_END_FINE),
+                    stake.neg()
                 );
 
                 const payout = stake.add(newBalance);
 
-                expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-                expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-                expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+                expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
+                expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
+                expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
 
                 await checkGameStatusAsync(gameChannel, d.gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
             })
@@ -442,7 +442,7 @@ contract('GameChannelConflict', accounts => {
             gameType: 1,
             num: 80,
             value: BET_VALUE,
-            balance: stake.idiv(2),
+            balance: stake.divn(2),
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
@@ -491,10 +491,10 @@ contract('GameChannelConflict', accounts => {
                     ...defaultData, gameType: 4, num: 2,
                 },
                 'too low balance': {
-                    ...defaultData, balance: stake.negated().add(1)
+                    ...defaultData, balance: stake.neg().addn(1)
                 },
                 'too high balance': {
-                    ...defaultData, balance: MAX_BALANCE.add(1)
+                    ...defaultData, balance: MAX_BALANCE.addn(1)
                 },
                 'wrong contract address': {
                     ...defaultData, contractAddress: () => accounts[4],
@@ -666,7 +666,7 @@ contract('GameChannelConflict', accounts => {
                 const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), d.signer);
 
-                const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceBefore = await getBalance(gameChannel.address);
                 const houseProfitBefore = await gameChannel.houseProfit.call();
                 const houseStakeBefore = await gameChannel.houseStake.call();
 
@@ -685,27 +685,27 @@ contract('GameChannelConflict', accounts => {
                     {from: d.from}
                 );
 
-                const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+                const contractBalanceAfter = await getBalance(gameChannel.address);
                 const houseProfitAfter = await gameChannel.houseProfit.call();
                 const houseStakeAfter = await gameChannel.houseStake.call();
 
                 // check new balances (profit, stake, contract balance)
-                const newBalance = BigNumber.max(
-                    fromGweiToWei(calcNewBalance(
+                const newBalance = max(
+                    new BN(fromGweiToWei(calcNewBalance(
                         d.gameType,
                         d.num,
-                        fromWeiToGwei(d.value),
+                        fromWeiToGwei(d.value.toString()),
                         d.serverSeed,
                         d.userSeed,
-                        fromWeiToGwei(d.balance)
-                    )).sub(CONFLICT_END_FINE),
-                    stake.negated()
+                        fromWeiToGwei(d.balance.toString())
+                    ))).sub(CONFLICT_END_FINE),
+                    stake.neg()
                 );
                 const payout = stake.add(newBalance);
 
-                expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(payout));
-                expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.sub(newBalance));
-                expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.sub(newBalance));
+                expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
+                expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
+                expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
 
                 await checkGameStatusAsync(gameChannel, d.gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
             })

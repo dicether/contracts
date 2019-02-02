@@ -8,7 +8,7 @@ const ChooseFrom12 = artifacts.require("./games/ChooseFrom12.sol");
 const FlipACoin = artifacts.require("./games/FlipACoin.sol");
 
 
-module.exports = function(deployer, network, accounts) {
+module.exports = async function(deployer, network, accounts) {
     let serverAccount = "";
     let houseAccount = "";
     let chainId = 123456789;
@@ -20,7 +20,7 @@ module.exports = function(deployer, network, accounts) {
         serverAccount = "0xcef260a5fed7a896bbe07b933b3a5c17aec094d8";
         houseAccount = "0x403681a631fd186d6b7b68f20be16c4c8e3edc12";
         chainId = 4;
-    } else if (network === "main"){
+    } else if (network === "main") {
         serverAccount = "0xcef260a5fed7a896bbe07b933b3a5c17aec094d8";
         houseAccount = "0x71be1ace87248f3950bdfc4c89b4b3eed059f6f3";
         chainId = 1;
@@ -28,24 +28,39 @@ module.exports = function(deployer, network, accounts) {
         throw "Invalid network!"
     }
 
-    deployer.deploy([DiceLower, DiceHigher, ChooseFrom12, FlipACoin]).then(() => {
-        return deployer.deploy(ConflictResolution,
-            [DiceLower.address, DiceHigher.address, ChooseFrom12.address, FlipACoin.address],
-            {gas: 2000000}
-        );
-    }).then(() => {
-        return deployer.deploy(GameChannel, serverAccount, 1e16, 5e18, ConflictResolution.address,
-            houseAccount, chainId, {gas: 5000000});
+    await deployer.deploy(DiceLower);
+    await deployer.deploy(DiceHigher);
+    await deployer.deploy(ChooseFrom12);
+    await deployer.deploy(FlipACoin);
 
-    }).then( () => {
-        return GameChannel.deployed();
-    }).then(gameChannel => {
-        if (network === "development") {
-            return gameChannel.addHouseStake({from: accounts[0], value: new BigNumber('20e18')}).then(() => {
-                return gameChannel.activate({from: accounts[0]});
-            }).then(() => {
-                return gameChannel.unpause({from: accounts[0]});
-            });
-        }
-    });
+    await DiceLower.deployed();
+    await DiceHigher.deployed();
+    await ChooseFrom12.deployed();
+    await FlipACoin.deployed();
+
+    await deployer.deploy(
+        ConflictResolution,
+        [DiceLower.address, DiceHigher.address, ChooseFrom12.address, FlipACoin.address],
+        {gas: 2000000}
+    );
+
+    await ConflictResolution.deployed();
+    await deployer.deploy(
+        GameChannel,
+        serverAccount,
+        1e16.toString(),
+        5e18.toString(),
+        ConflictResolution.address,
+        houseAccount,
+        chainId,
+        {gas: 5000000}
+    );
+
+    const gameChannel = await GameChannel.deployed();
+
+    if (network === "development") {
+        await gameChannel.addHouseStake({from: accounts[0], value: 20e18.toString()});
+        await gameChannel.activate({from: accounts[0]});
+        await gameChannel.unpause({from: accounts[0]});
+    }
 };

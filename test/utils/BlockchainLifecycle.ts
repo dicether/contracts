@@ -1,5 +1,8 @@
+import {Provider} from "web3/providers";
+import {promisify} from "util";
+
 export default class BlockchainLifecycle {
-    private currentProvider: any;
+    private currentProvider: Provider;
     private snapShotIds: number[];
 
     constructor(currentProvider: any) {
@@ -8,12 +11,14 @@ export default class BlockchainLifecycle {
     }
 
     async takeSnapshotAsync() {
-        const snapShotId = await this.currentProvider.send({
+        const send = promisify(this.currentProvider.send);
+        const res: any = await send({
             jsonrpc: '2.0',
             method: 'evm_snapshot',
             params: [],
             id: 42
-        }).result;
+        });
+        const snapShotId = res.result;
 
         this.snapShotIds.push(snapShotId);
 
@@ -21,12 +26,15 @@ export default class BlockchainLifecycle {
 
     async revertSnapShotAsync() {
         const snapshotId = this.snapShotIds.pop();
-        const didRevert =  this.currentProvider.send({
+        const send = promisify(this.currentProvider.send);
+        const res: any =  await send({
             jsonrpc: '2.0',
             method: 'evm_revert',
             params: [snapshotId],
             id: 42
-        }).result;
+        });
+        const didRevert = res.result;
+
         if (!didRevert) {
             throw new Error(`Snapshot with id #${snapshotId} failed to revert!`);
         }

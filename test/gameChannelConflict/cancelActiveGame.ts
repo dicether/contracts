@@ -3,7 +3,7 @@ import * as chai from 'chai';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
 import {INITIAL_HOUSE_STAKE, MAX_STAKE, NOT_ENDED_FINE} from "../utils/config";
-import {configureChai, createGame, TRANSACTION_ERROR} from '../utils/util';
+import {configureChai, createGame, getBalance, TRANSACTION_ERROR} from '../utils/util';
 import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
 
 const GameChannel = artifacts.require("./GameChannel.sol");
@@ -43,6 +43,7 @@ contract('GameChannelConflict', accounts => {
         const stake = MAX_STAKE;
 
         beforeEach(async () => {
+            console.log("stake: ", stake.toString());
             await createGame(gameChannel, server, user, shash3, phash3, stake);
 
         });
@@ -68,19 +69,19 @@ contract('GameChannelConflict', accounts => {
         it("Should succeed if already userCancelActiveGame called by user", async () => {
             await gameChannel.userCancelActiveGame(1, {from: user});
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
             await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.add(NOT_ENDED_FINE));
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.add(NOT_ENDED_FINE));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
+            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(NOT_ENDED_FINE));
+            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(NOT_ENDED_FINE));
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 
@@ -117,19 +118,19 @@ contract('GameChannelConflict', accounts => {
         it("Should succeed if already serverCancelActiveGame called by server", async () => {
             await gameChannel.serverCancelActiveGame(user, 1, {from: server});
 
-            const contractBalanceBefore = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceBefore = await getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
             await gameChannel.userCancelActiveGame(gameId, {from: user});
 
-            const contractBalanceAfter = await web3.eth.getBalance(gameChannel.address);
+            const contractBalanceAfter = await getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.be.bignumber.equal(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
-            expect(houseProfitAfter).to.be.bignumber.equal(houseProfitBefore.add(NOT_ENDED_FINE));
-            expect(houseStakeAfter).to.be.bignumber.equal(houseStakeBefore.add(NOT_ENDED_FINE));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
+            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(NOT_ENDED_FINE));
+            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(NOT_ENDED_FINE));
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 

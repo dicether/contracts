@@ -39,7 +39,7 @@ contract('Pausable', accounts => {
             await gameChannel.unpause({from: owner});
             await gameChannel.pause({from: owner});
             expect(await gameChannel.paused.call()).to.equal(true);
-            // expect(await gameChannel.timePaused.call()).to.be.bignumber.equal();
+            // expect(await gameChannel.timePaused.call()).to.eq.BN();
         });
     });
 
@@ -57,7 +57,7 @@ contract('Pausable', accounts => {
             await gameChannel.activate({from: owner});
             await gameChannel.unpause({from: owner});
             expect(await gameChannel.paused.call()).to.equal(false);
-            expect(await gameChannel.timePaused.call()).to.be.bignumber.equal(0);
+            expect(await gameChannel.timePaused.call()).to.eq.BN(0);
         });
     });
 });
