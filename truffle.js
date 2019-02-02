@@ -29,6 +29,7 @@ module.exports = {
       port: 8546,
       gas: 300000,
       gasPrice: 4000000000, // 4 GWei
+      confirmations: 2,
       network_id: "1" // Match main network
     }
   },
