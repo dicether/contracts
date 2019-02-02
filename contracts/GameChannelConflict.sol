@@ -224,6 +224,8 @@ contract GameChannelConflict is GameChannelBase {
             game.betValue,
             game.balance,
             game.stake,
+            game.serverSeed,
+            game.userSeed,
             game.endInitiatedTime
         );
 

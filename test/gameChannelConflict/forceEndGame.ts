@@ -1,7 +1,7 @@
 import {
     calcUserProfit,
     GameStatus,
-    ReasonEnded, fromWeiToGwei, fromGweiToWei, calcMaxUserProfit
+    ReasonEnded, fromWeiToGwei, fromGweiToWei, calcMaxUserProfit, calcNewBalance
 } from '@dicether/state-channel';
 import BN from 'bn.js';
 import * as chai from 'chai';
@@ -200,7 +200,15 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             const houseStakeAfter = await gameChannel.houseStake.call();
 
             // check new balances (profit, stake, contract balance)
-            const newBalance = max(d.balance.sub(d.value).sub(NOT_ENDED_FINE), stake.neg());
+            const regularNewBalance = new BN(fromGweiToWei(calcNewBalance(
+                d.gameType,
+                d.num,
+                fromWeiToGwei(d.value.toString()),
+                d.serverSeed,
+                d.userSeed,
+                fromWeiToGwei(d.balance.toString())
+            )));
+            const newBalance = max(regularNewBalance.sub(NOT_ENDED_FINE), stake.neg());
             const payout = stake.add(newBalance);
 
             expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));

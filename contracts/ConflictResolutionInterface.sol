@@ -36,6 +36,8 @@ interface ConflictResolutionInterface {
         uint _betValue,
         int _balance,
         uint _stake,
+        bytes32 _serverSeed,
+        bytes32 _userSeed,
         uint _endInitiatedTime
     )
         external

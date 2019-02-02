@@ -145,6 +145,8 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
         uint _betValue,
         int _balance,
         uint _stake,
+        bytes32 _serverSeed,
+        bytes32 _userSeed,
         uint _endInitiatedTime
     )
         public
@@ -157,8 +159,13 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
                 || isValidBet(_gameType, _betNum, _betValue), "inv bet");
 
 
-        // assume user has lost
-        int newBalance = _balance.sub(_betValue.castToInt());
+        // if no bet was placed (cancelActiveGame) set new balance to 0
+        int newBalance = 0;
+
+        // a bet was placed calculate new balance
+        if (_gameType != 0) {
+            newBalance = processBet(_gameType, _betNum, _betValue, _balance, _serverSeed, _userSeed);
+        }
 
         // penalize user as he didn't end game
         newBalance = newBalance.sub(NOT_ENDED_FINE);
