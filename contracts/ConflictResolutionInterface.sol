@@ -9,13 +9,13 @@ pragma solidity ^0.5.0;
  * @author dicether
  */
 interface ConflictResolutionInterface {
-    function minHouseStake(uint activeGames) external pure returns(uint);
+    function minHouseStake(uint activeGames) external view returns(uint);
 
-    function maxBalance() external pure returns(int);
+    function maxBalance() external view returns(int);
 
     function conflictEndFine() external pure returns(int);
 
-    function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) external pure returns(bool);
+    function isValidBet(uint8 _gameType, uint _betNum, uint _betValue) external view returns(bool);
 
     function endGameConflict(
         uint8 _gameType,
