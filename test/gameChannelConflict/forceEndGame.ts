@@ -8,7 +8,14 @@ import * as chai from 'chai';
 import * as leche from 'leche';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {MAX_STAKE, NOT_ENDED_FINE, USER_TIMEOUT, SERVER_TIMEOUT, INITIAL_HOUSE_STAKE} from "../utils/config";
+import {
+    MAX_STAKE,
+    NOT_ENDED_FINE,
+    USER_TIMEOUT,
+    SERVER_TIMEOUT,
+    INITIAL_HOUSE_STAKE,
+    MAX_BALANCE
+} from "../utils/config";
 import {signData} from "../utils/signUtil";
 import {configureChai, createGame, getBalance, increaseTimeAsync, max, TRANSACTION_ERROR} from '../utils/util';
 import {
@@ -74,7 +81,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             gameType: 1,
             num: 80,
             value: BET_VALUE,
-            balance: stake.divn(2),
+            balance: MAX_BALANCE,
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
@@ -274,7 +281,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             gameType: 1,
             num: 80,
             value: BET_VALUE,
-            balance: stake.divn(2),
+            balance: MAX_BALANCE.divn(2),
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
