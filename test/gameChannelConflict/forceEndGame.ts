@@ -373,6 +373,12 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 'game type 4 num 1': {
                     ...defaultData, gameType: 4, num: 1,
                 },
+                'game type 5 num 1': {
+                ...defaultData, gameType: 5, num: 1,
+                },
+                'game type 5 num 1098437885952': {
+                    ...defaultData, gameType: 5, num: "1098437885952",
+                },
             }, (d: typeof defaultData)  => {
 
             it("should succeed", async () => {

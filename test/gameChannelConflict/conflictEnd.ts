@@ -354,6 +354,12 @@ contract('GameChannelConflict', accounts => {
             'game type 4 num 1': {
                 ...defaultData, gameType: 4, num: 1,
             },
+            'game type 5 num 1': {
+                ...defaultData, gameType: 5, num: 1,
+            },
+            'game type 5 num 1098437885952': {
+                ...defaultData, gameType: 5, num: "1098437885952",
+            },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
 
@@ -489,6 +495,12 @@ contract('GameChannelConflict', accounts => {
                 },
                 'game type 4 num 1': {
                     ...defaultData, gameType: 4, num: 2,
+                },
+                'game type 5 num 0': {
+                    ...defaultData, gameType: 5, num: 0,
+                },
+                'game type 5 num 1098437885953': {
+                    ...defaultData, gameType: 5, num: "1098437885953",
                 },
                 'too low balance': {
                     ...defaultData, balance: stake.neg().addn(1)
@@ -640,6 +652,12 @@ contract('GameChannelConflict', accounts => {
             },
             'game type 4 num 1': {
                 ...defaultData, gameType: 4, num: 1,
+            },
+            'game type 5 num 1': {
+                ...defaultData, gameType: 5, num: 1,
+            },
+            'game type 5 num 1098437885952': {
+                ...defaultData, gameType: 5, num: "1098437885952",
             },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
