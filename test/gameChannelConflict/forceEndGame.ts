@@ -230,18 +230,14 @@ contract('GameChannelConflict-ForceEnd', accounts => {
         it("Force end should succeed after cancelActiveGame", async () => {
             const d = defaultData;
 
-            console.log("ServeEndGameCOnflict", d.gameType)
             await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
-            console.log("Ended!");
 
             const contractBalanceBefore = await getBalance(gameChannel.address);
             const houseProfitBefore = await gameChannel.houseProfit.call();
             const houseStakeBefore = await gameChannel.houseStake.call();
 
             await increaseTimeAsync(SERVER_TIMEOUT);
-            console.log("Force End", d.gameType)
             await gameChannel.serverForceGameEnd(user, d.gameId, {from: server});
-            console.log("Force Ended", d.gameType)
 
             const contractBalanceAfter = await getBalance(gameChannel.address);
             const houseProfitAfter= await gameChannel.houseProfit.call();
@@ -385,7 +381,6 @@ contract('GameChannelConflict-ForceEnd', accounts => {
                 const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), d.signer);
 
-                console.log("Game type", d.gameType);
                 await gameChannel.userEndGameConflict(
                     d.roundId,
                     d.gameType,

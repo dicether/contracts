@@ -21,7 +21,6 @@ contract('MathUtilMock', () => {
         const a = 100;
         const b = 1;
         const res = await mathUtil.max(a, b);
-        console.log(res);
         expect(res).to.eq.BN(a);
     });
 

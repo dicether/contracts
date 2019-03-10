@@ -43,7 +43,6 @@ contract('GameChannelConflict', accounts => {
         const stake = MAX_STAKE;
 
         beforeEach(async () => {
-            console.log("stake: ", stake.toString());
             await createGame(gameChannel, server, user, shash3, phash3, stake);
 
         });
