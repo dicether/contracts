@@ -1,8 +1,9 @@
-import {signBet} from "@dicether/state-channel";
+import {createTypedData, signBet} from "@dicether/state-channel";
 import BN from "bn.js";
 import * as ethSigUtil from "eth-sig-util";
 import * as ethAbi from "ethereumjs-abi";
 import * as ethUtil from "ethereumjs-util";
+import {promisify} from "util";
 
 const publicPrivateKeyMap: {[id: string]: string} = {
     '0x26006236eaB6409D9FDECb16ed841033d6B4A6bC': '0x1ce6a4cc4c9941a4781349f988e129accdc35a55bb3d5b1a7b342bc2171db484',
@@ -12,15 +13,9 @@ const publicPrivateKeyMap: {[id: string]: string} = {
     '0x3C9a6014424cBdeea0D75CBaa752FC0A1fEfe327': '0x2c88b2e35ce934d91a9fe78be093471eb66ee78a9fe7499a247c465c80446879'
 };
 
-export function signData(roundId: number, gameType: number, num: number, value: BN, balance: BN,
+export async function signData(roundId: number, gameType: number, num: number, value: BN, balance: BN,
                          serverHash: string, userHash: string, gameId: number, contractAddress: string,
-                         account: string): string {
-
-    if (!(account in publicPrivateKeyMap)) {
-        throw Error("Invalid account! You need to run ganache with --mnemonic \"test\"");
-    }
-    const privKey = publicPrivateKeyMap[account] as string;
-
+                         account: string): Promise<string> {
     const bet =  {
         roundId,
         gameType,
@@ -32,9 +27,16 @@ export function signData(roundId: number, gameType: number, num: number, value: 
         gameId,
     };
 
-    const privKeyBuf = ethUtil.toBuffer(privKey);
-    return signBet(bet, 123456789, contractAddress, privKeyBuf, 2);
+    const typedData = createTypedData(bet, 123456789, contractAddress, 2);
+    const send = promisify(web3.currentProvider.send);
+    const res: any = await send({
+        jsonrpc: '2.0',
+        method: "eth_signTypedData",
+        params: [account, typedData],
+        id: 42
+    });
 
+    return res.result;
 }
 
 export function signStartData(contractAddress: string,

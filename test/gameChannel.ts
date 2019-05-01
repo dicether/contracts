@@ -176,7 +176,7 @@ contract('GameChannel', accounts => {
             }
         }, (d: typeof defaultData) => {
             it("Should fail", async () => {
-                const sig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash, d.userHash,
+                const sig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash, d.userHash,
                     d.gameId, d.contractAddress(), d.signer);
 
                 return expect(
@@ -193,7 +193,7 @@ contract('GameChannel', accounts => {
             // await gameChannel.acceptGame(user2, gameId, hash, {from: server});
             await createGame(gameChannel, server, user2, hash, hash, stake);
 
-            const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            const sig = await signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, user);
 
             return expect(
@@ -203,7 +203,7 @@ contract('GameChannel', accounts => {
         });
 
         it("Should fail if game session status not active", async () => {
-            const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            const sig = await signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, user);
 
             await gameChannel.userCancelActiveGame(gameId, {from: user});
@@ -215,7 +215,7 @@ contract('GameChannel', accounts => {
         });
 
         it("serverEndGame should succeed", async () => {
-            const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            const sig = await signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, user);
 
             const contractBalanceBefore = await getBalance(gameChannel.address);
@@ -300,7 +300,7 @@ contract('GameChannel', accounts => {
             }
         }, (d: typeof defaultData) => {
             it("Should fail", async () => {
-                const sig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash, d.userHash,
+                const sig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash, d.userHash,
                     d.gameId, d.contractAddress(), d.signer);
 
                 return expect(
@@ -314,7 +314,7 @@ contract('GameChannel', accounts => {
             const gameId = 2; // tslint:disable-line:no-shadowed-variable
             await createGame(gameChannel, server, user2, hash, hash, stake);
 
-            const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            const sig = await signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, server);
 
             return expect(
@@ -324,7 +324,7 @@ contract('GameChannel', accounts => {
         });
 
         it("Should fail if game session status not active", async () => {
-            const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            const sig = await signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, server);
 
             await gameChannel.userCancelActiveGame(gameId, {from: user});
@@ -336,7 +336,7 @@ contract('GameChannel', accounts => {
         });
 
         it("userEndGame should succeed", async () => {
-            const sig = signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
+            const sig = await signData(roundId, gameType, num, value, balance, serverHash, userHash, gameId,
                 gameChannel.address, server);
 
             const contractBalanceBefore = await getBalance(gameChannel.address);

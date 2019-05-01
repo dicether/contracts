@@ -139,7 +139,7 @@ contract('GameChannelConflict', accounts => {
                 },
             }, (d: typeof defaultData) => {
                 it("Should fail", async () => {
-                    const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                    const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                         d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                     return expect(gameChannel.serverEndGameConflict(
@@ -172,7 +172,7 @@ contract('GameChannelConflict', accounts => {
             }, (d: typeof defaultData) => {
                 it("Should fail", async () => {
                     await createGame(gameChannel, server, user2, shash3, phash3, stake);
-                    const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                    const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                         d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                     return expect(gameChannel.serverEndGameConflict(
@@ -198,7 +198,7 @@ contract('GameChannelConflict', accounts => {
         it("Should succeed", async () => {
             const d = defaultData;
 
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
@@ -238,7 +238,7 @@ contract('GameChannelConflict', accounts => {
 
             await gameChannel.userCancelActiveGame(d.gameId, {from: user});
 
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
@@ -276,7 +276,7 @@ contract('GameChannelConflict', accounts => {
         it("Should succeed after user called conflict game with lower roundId!", async () => {
             const d = defaultData;
 
-            const serverSig = signData(d.roundId - 1, d.gameType, d.num, d.value, d.balance, shash3,
+            const serverSig = await signData(d.roundId - 1, d.gameType, d.num, d.value, d.balance, shash3,
                 phash3, d.gameId, d.contractAddress(), server);
 
             await gameChannel.userEndGameConflict(
@@ -294,7 +294,7 @@ contract('GameChannelConflict', accounts => {
                 {from: user}
             );
 
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
@@ -363,7 +363,7 @@ contract('GameChannelConflict', accounts => {
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
 
-                const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), server);
 
                 await gameChannel.userEndGameConflict(
@@ -385,7 +385,7 @@ contract('GameChannelConflict', accounts => {
                 const houseProfitBefore = await gameChannel.houseProfit.call();
                 const houseStakeBefore = await gameChannel.houseStake.call();
 
-                const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                 await gameChannel.serverEndGameConflict(
@@ -513,7 +513,7 @@ contract('GameChannelConflict', accounts => {
                 },
             }, (d: typeof defaultData) => {
                 it("Should fail", async () => {
-                    const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                    const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                         d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                     return expect(gameChannel.userEndGameConflict(
@@ -539,7 +539,7 @@ contract('GameChannelConflict', accounts => {
 
             await gameChannel.serverCancelActiveGame(user, d.gameId, {from: server});
 
-            const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.userEndGameConflict(
@@ -575,7 +575,7 @@ contract('GameChannelConflict', accounts => {
         it("Should succeed after server called conflict game with lower roundId!", async () => {
             const d = defaultData;
 
-            const userSig = signData(d.roundId - 1, d.gameType, d.num, d.value, d.balance, shash3,
+            const userSig = await signData(d.roundId - 1, d.gameType, d.num, d.value, d.balance, shash3,
                 phash3, d.gameId, d.contractAddress(), user);
 
             await gameChannel.serverEndGameConflict(
@@ -595,7 +595,7 @@ contract('GameChannelConflict', accounts => {
                 {from: server}
             );
 
-            const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.userEndGameConflict(
@@ -661,7 +661,7 @@ contract('GameChannelConflict', accounts => {
             },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
-                const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), user);
 
                 await gameChannel.serverEndGameConflict(
@@ -681,7 +681,7 @@ contract('GameChannelConflict', accounts => {
                     {from: server}
                 );
 
-                const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                 const contractBalanceBefore = await getBalance(gameChannel.address);

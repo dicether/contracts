@@ -95,7 +95,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         it("Should fail if time span too low", async () => {
             const d = defaultData;
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
@@ -120,7 +120,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         it("Should fail if wrong sender", async () => {
             const d = defaultData;
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
@@ -150,7 +150,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         it("Should fail if user init end game!", async () => {
             const d = defaultData;
-            const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), server);
 
             await gameChannel.userEndGameConflict(
@@ -175,7 +175,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         it("Force end should succeed", async () => {
             const d = defaultData;
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.serverEndGameConflict(
@@ -291,7 +291,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         it("Should fail if time span too low", async () => {
             const d = defaultData;
-            const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), d.signer);
 
             await gameChannel.userEndGameConflict(
@@ -319,7 +319,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
 
         it("Should fail if server init end game!", async () => {
             const d = defaultData;
-            const userSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+            const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                 d.userHash, d.gameId, d.contractAddress(), user);
 
             await gameChannel.serverEndGameConflict(
@@ -378,7 +378,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             }, (d: typeof defaultData)  => {
 
             it("should succeed", async () => {
-                const serverSig = signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
+                const serverSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
                     d.userHash, d.gameId, d.contractAddress(), d.signer);
 
                 await gameChannel.userEndGameConflict(
