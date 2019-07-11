@@ -5,6 +5,7 @@ import "./Utilities.sol";
 import "../SafeMath.sol";
 import "../SafeCast.sol";
 
+
 contract Wheel is GameInterface, Utilities {
     using SafeCast for uint;
     using SafeMath for uint;
@@ -61,6 +62,22 @@ contract Wheel is GameInterface, Utilities {
         return randNum % RESULT_RANGE;
     }
 
+    function userProfit(uint _betNum, uint _betValue, uint _resultNum)
+        external
+        onlyValidNum(_betNum)
+        onlyValidResultNum(_resultNum)
+        view
+        returns(int)
+    {
+        uint risk = getRisk(_betNum);
+        uint segments = getSegments(_betNum);
+        uint16[] storage payout = PAYOUT[risk][segments];
+        uint16 payoutValue = payout[_resultNum.mul(payout.length).div(RESULT_RANGE)];
+
+        return calculateProfit(payoutValue, _betValue);
+    }
+
+
     function maxUserProfit(uint _betNum, uint _betValue) external onlyValidNum(_betNum) view returns(int) {
         uint risk = getRisk(_betNum);
         uint segments = getSegments(_betNum);
@@ -73,7 +90,11 @@ contract Wheel is GameInterface, Utilities {
             }
         }
 
-        return _betValue.mul(maxPayout).div(PAYOUT_DIVIDER).castToInt().sub(_betValue.castToInt());
+        return calculateProfit(maxPayout, _betValue);
+    }
+
+    function calculateProfit(uint _payout, uint _betValue) private pure returns(int) {
+        return _betValue.mul(_payout).div(PAYOUT_DIVIDER).castToInt().sub(_betValue.castToInt());
     }
 
     function getRisk(uint _num) private pure returns(uint) {

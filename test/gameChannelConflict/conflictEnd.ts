@@ -360,6 +360,12 @@ contract('GameChannelConflict', accounts => {
             'game type 5 num 1098437885952': {
                 ...defaultData, gameType: 5, num: "1098437885952",
             },
+            'game type 6 num 110': {
+                ...defaultData, gameType: 6, num: 110,
+            },
+            'game type 6 num 320': {
+                ...defaultData, gameType: 6, num: 320,
+            },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
 
@@ -658,6 +664,12 @@ contract('GameChannelConflict', accounts => {
             },
             'game type 5 num 1098437885952': {
                 ...defaultData, gameType: 5, num: "1098437885952",
+            },
+            'game type 6 num 110': {
+                ...defaultData, gameType: 6, num: 110,
+            },
+            'game type 6 num 320': {
+                ...defaultData, gameType: 6, num: 320,
             },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {

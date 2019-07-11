@@ -19,7 +19,7 @@
   "author": "Dicether",
   "license": "AGPL-3.0-only",
   "dependencies": {
-    "@dicether/state-channel": "^1.0.0-alpha.8",
+    "@dicether/state-channel": "^1.0.0-alpha.9",
     "truffle": "^5.0.10"
   },
   "devDependencies": {
