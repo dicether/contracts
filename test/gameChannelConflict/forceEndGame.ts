@@ -80,7 +80,7 @@ contract('GameChannelConflict-ForceEnd', accounts => {
             roundId: 10,
             gameType: 1,
             num: 80,
-            value: BET_VALUE,
+            value: BET_VALUE.divn(2),
             balance: MAX_BALANCE,
             serverHash: shash2,
             userHash: phash2,

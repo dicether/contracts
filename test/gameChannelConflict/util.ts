@@ -17,7 +17,7 @@ export const shash1 = web3.utils.sha3("0x000000000000000000000000000000000000000
 export const shash2 = web3.utils.sha3(shash1);
 export const shash3 = web3.utils.sha3(shash2);
 
-export const BET_VALUE = new BN(maxBet(1, 1, MIN_BANKROLL.div(new BN(1e9)).toNumber())).mul(new BN(1e9));
+export const BET_VALUE = new BN(maxBet(1, 1, MIN_BANKROLL.div(new BN(1e9)).toNumber(), 1)).mul(new BN(1e9));
 
 export async function checkGameStatusAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number) {
     // check game session state
