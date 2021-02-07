@@ -671,6 +671,12 @@ contract('GameChannelConflict', accounts => {
             'game type 6 num 320': {
                 ...defaultData, gameType: 6, num: 320,
             },
+            'game type 7 num 108': {
+                ...defaultData, gameType: 7, num: 108,
+            },
+            'game type 7 num 316': {
+                ...defaultData, gameType: 7, num: 316,
+            },
         }, (d: typeof defaultData) => {
             it("Should succeed after user called conflict game with same roundId!", async () => {
                 const userSig = await signData(d.roundId, d.gameType, d.num, d.value, d.balance, d.serverHash,
