@@ -6,14 +6,16 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas:4712388,
+      gas: 4712388,
       network_id: "*" // Match any network id
     },
     test: {
       host: "localhost",
       port: 8545,
-      gas:4712388,
-      network_id: "*" // Match any network id
+      gas: 4712388,
+      network_id: "*", // Match any network id
+      disableConfirmationListener: true, // workaround for eth_getBlockByNumber spam
+
     },
     rinkeby: {
       host: "localhost",
@@ -33,10 +35,13 @@ module.exports = {
       network_id: "1" // Match main network
     }
   },
-  solc: {
-  optimizer: {
-    enabled: true,
-    runs: 200
+  compilers: {
+    solc: {
+      version: "^0.5",
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
     }
   }
 };

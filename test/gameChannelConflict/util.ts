@@ -10,12 +10,12 @@ const expect = chai.expect;
 
 export const ZERO_SEED = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-export const phash1 = web3.utils.sha3("0x0000000000000000000000000000000000000000000000000000000000000001");
-export const phash2 = web3.utils.sha3(phash1);
-export const phash3 = web3.utils.sha3(phash2);
-export const shash1 = web3.utils.sha3("0x0000000000000000000000000000000000000000000000000000000000000002");
-export const shash2 = web3.utils.sha3(shash1);
-export const shash3 = web3.utils.sha3(shash2);
+export const phash1 = web3.utils.sha3("0x0000000000000000000000000000000000000000000000000000000000000001") as string;
+export const phash2 = web3.utils.sha3(phash1) as string;
+export const phash3 = web3.utils.sha3(phash2) as string;
+export const shash1 = web3.utils.sha3("0x0000000000000000000000000000000000000000000000000000000000000002") as string;
+export const shash2 = web3.utils.sha3(shash1) as string;
+export const shash3 = web3.utils.sha3(shash2) as string;
 
 export const BET_VALUE = new BN(maxBet(1, 1, MIN_BANKROLL.div(new BN(1e9)).toNumber(), 1)).mul(new BN(1e9));
 

@@ -1,9 +1,10 @@
 import {createTypedData, signBet} from "@dicether/state-channel";
 import BN from "bn.js";
 import * as ethSigUtil from "eth-sig-util";
-import * as ethAbi from "ethereumjs-abi";
 import * as ethUtil from "ethereumjs-util";
 import {promisify} from "util";
+import {HttpProvider} from "web3-core";
+import {BNLike} from "ethereumjs-util";
 
 const publicPrivateKeyMap: {[id: string]: string} = {
     '0x26006236eaB6409D9FDECb16ed841033d6B4A6bC': '0x1ce6a4cc4c9941a4781349f988e129accdc35a55bb3d5b1a7b342bc2171db484',
@@ -28,9 +29,9 @@ export async function signData(roundId: number, gameType: number, num: number, v
     };
 
     const typedData = createTypedData(bet, 123456789, contractAddress, 2);
-    const send = promisify(web3.currentProvider.send);
+    const send = promisify((web3.currentProvider as HttpProvider).send);
     const res: any = await send({
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         method: "eth_signTypedData",
         params: [account, typedData],
         id: 42
@@ -45,10 +46,13 @@ export function signStartData(contractAddress: string,
                               createBefore: number,
                               serverEndHash: string,
                               serverAccount: string): string {
-    const hash = ethAbi.soliditySHA3(
-        ['address', 'address', 'uint', 'uint', 'bytes32'],
-        [contractAddress, user, lastGameId, createBefore, ethUtil.toBuffer(serverEndHash)]
-    );
+    const hash = ethUtil.toBuffer(web3.utils.soliditySha3(
+        {t: "address", v: contractAddress},
+        {t: "address", v: user},
+        {t: "uint", v: lastGameId},
+        {t: "uint", v: createBefore},
+        {t: "bytes32", v: serverEndHash}
+    ));
 
     if (!(serverAccount in publicPrivateKeyMap)) {
         throw Error("Invalid account! You need to run ganache with --mnemonic \"test\"");
@@ -57,5 +61,5 @@ export function signStartData(contractAddress: string,
     const privKey = publicPrivateKeyMap[serverAccount];
 
     const sig = ethUtil.ecsign(hash, ethUtil.toBuffer(privKey));
-    return ethSigUtil.concatSig(sig.v, sig.r, sig.s);
+    return ethSigUtil.concatSig(new BN(sig.v).toArrayLike(Buffer), sig.r, sig.s);
 }

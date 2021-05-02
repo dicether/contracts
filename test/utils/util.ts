@@ -1,15 +1,16 @@
-import bnChai from 'bn-chai';
-import BN from 'bn.js';
-import * as chai from 'chai';
-import ChaiAsPromised from 'chai-as-promised';
-import {TransactionReceipt} from "web3/types";
+import {TransactionReceipt} from "@ethersproject/abstract-provider";
+import bnChai from "bn-chai";
+import BN from "bn.js";
+import * as chai from "chai";
+import ChaiAsPromised from "chai-as-promised";
+import {HttpProvider} from "web3-core";
 
 import {promisify} from "util";
 import {signStartData} from "./signUtil";
 
 
 export async function increaseTimeAsync(addSeconds: number) {
-    await promisify(web3.currentProvider.send)({
+    await promisify((web3.currentProvider as HttpProvider).send)({
         jsonrpc: "2.0",
         method: "evm_increaseTime",
         params: [addSeconds], id: 0
@@ -22,7 +23,7 @@ export async function getTransactionCost(receipt: TransactionReceipt) {
     const gasPrice = tx.gasPrice;
     const gasUsed = receipt.gasUsed;
 
-    return new BN(gasPrice.toString()).muln(gasUsed);
+    return new BN(gasPrice.toString()).mul(new BN(gasUsed.toString()));
 }
 
 export function configureChai() {

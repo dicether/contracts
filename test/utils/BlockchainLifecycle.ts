@@ -1,5 +1,5 @@
-import {Provider} from "web3/providers";
 import {promisify} from "util";
+import {HttpProvider as Provider} from "web3-core";
 
 export default class BlockchainLifecycle {
     private currentProvider: Provider;

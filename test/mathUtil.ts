@@ -10,7 +10,7 @@ const expect = chai.expect;
 
 
 contract('MathUtilMock', () => {
-    const MIN_INT = new BN(2).pow(new BN(255)).muln(-1);
+    const MIN_INT = new BN(2).pow(new BN(255)).neg();
     let mathUtil: any;
     
     before(async () => {
@@ -46,7 +46,7 @@ contract('MathUtilMock', () => {
 
         it('Should work for MIN_INT', async () => {
             const res = await mathUtil.abs(MIN_INT);
-            expect(res).to.eq.BN(MIN_INT.muln(-1));
+            expect(res).to.eq.BN(MIN_INT.abs());
         })
     });
 });
