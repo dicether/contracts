@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/node:9.11.1
+      - image: circleci/node:14.16.1
 
     working_directory: ~/repo
 
@@ -34,10 +34,10 @@ jobs:
   test:
     docker:
       # specify the version you desire here
-      - image: circleci/node:9.11.1
+      - image: circleci/node:14.16.1
 
-      - image: trufflesuite/ganache-cli:v6.4.3
-        command: ganache-cli --mnemonic "test" -e 1000 -i 123456789
+      - image: trufflesuite/ganache-cli:v6.12.1
+        command: ganache-cli --mnemonic "test" -e 1000 -i 123456789 --chainId 123456789
 
     working_directory: ~/repo
 
