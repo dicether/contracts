@@ -60,7 +60,7 @@ module.exports = async function(deployer, network, accounts) {
         ConflictResolution.address,
         houseAccount,
         chainId,
-        {gas: 5000000}
+        {gas: 5500000}
     );
 
     const gameChannel = await GameChannel.deployed();
