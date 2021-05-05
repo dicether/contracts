@@ -2,7 +2,7 @@ import {GameStatus, ReasonEnded} from '@dicether/state-channel';
 import * as chai from 'chai';
 
 import BlockchainLifecycle from '../utils/BlockchainLifecycle';
-import {INITIAL_HOUSE_STAKE, MAX_STAKE, NOT_ENDED_FINE} from "../utils/config";
+import {CONFLICT_END_FINE, INITIAL_HOUSE_STAKE, MAX_STAKE} from "../utils/config";
 import {configureChai, createGame, getBalance, TRANSACTION_ERROR} from '../utils/util';
 import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
 
@@ -78,9 +78,9 @@ contract('GameChannelConflict', accounts => {
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
-            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(NOT_ENDED_FINE));
-            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(NOT_ENDED_FINE));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(CONFLICT_END_FINE));
+            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(CONFLICT_END_FINE));
+            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(CONFLICT_END_FINE));
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 
@@ -127,9 +127,9 @@ contract('GameChannelConflict', accounts => {
             const houseProfitAfter= await gameChannel.houseProfit.call();
             const houseStakeAfter = await gameChannel.houseStake.call();
 
-            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(NOT_ENDED_FINE));
-            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(NOT_ENDED_FINE));
-            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(NOT_ENDED_FINE));
+            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(CONFLICT_END_FINE));
+            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(CONFLICT_END_FINE));
+            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(CONFLICT_END_FINE));
 
             await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 
