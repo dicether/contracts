@@ -508,6 +508,18 @@ contract('GameChannelConflict', accounts => {
                 'game type 5 num 1098437885953': {
                     ...defaultData, gameType: 5, num: "1098437885953",
                 },
+                'game type 6 num 410': {
+                    ...defaultData, gameType: 6, num: 410,
+                },
+                'game type 6 num 130': {
+                    ...defaultData, gameType: 6, num: 130,
+                },
+                'game type 7 num 408': {
+                    ...defaultData, gameType: 6, num: 408,
+                },
+                'game type 7 num 117': {
+                    ...defaultData, gameType: 6, num: 117,
+                },
                 'too low balance': {
                     ...defaultData, balance: stake.neg().addn(1)
                 },
