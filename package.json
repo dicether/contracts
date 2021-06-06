@@ -39,7 +39,7 @@
     "chai-bignumber": "^2.0.2",
     "dirty-chai": "^2.0.1",
     "eth-sig-util": "^3.0.1",
-    "ethereumjs-abi": "github:ethereumjs/ethereumjs-abi",
+    "ethereumjs-abi": "^0.6.8",
     "ethereumjs-util": "^7.0.10",
     "leche": "^2.3.0",
     "left-pad": "^1.1.3",
