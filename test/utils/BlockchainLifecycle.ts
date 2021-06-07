@@ -10,28 +10,27 @@ export default class BlockchainLifecycle {
         this.snapShotIds = [];
     }
 
-    async takeSnapshotAsync() {
+    async takeSnapshotAsync(): Promise<void> {
         const send = promisify(this.currentProvider.send);
         const res: any = await send({
-            jsonrpc: '2.0',
-            method: 'evm_snapshot',
+            jsonrpc: "2.0",
+            method: "evm_snapshot",
             params: [],
-            id: 42
+            id: 42,
         });
         const snapShotId = res.result;
 
         this.snapShotIds.push(snapShotId);
-
     }
 
-    async revertSnapShotAsync() {
+    async revertSnapShotAsync(): Promise<void> {
         const snapshotId = this.snapShotIds.pop();
         const send = promisify(this.currentProvider.send);
-        const res: any =  await send({
-            jsonrpc: '2.0',
-            method: 'evm_revert',
+        const res: any = await send({
+            jsonrpc: "2.0",
+            method: "evm_revert",
             params: [snapshotId],
-            id: 42
+            id: 42,
         });
         const didRevert = res.result;
 

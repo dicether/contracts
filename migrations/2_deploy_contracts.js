@@ -1,3 +1,4 @@
+/* global artifacts */
 const GameChannel = artifacts.require("./GameChannel.sol");
 const ConflictResolution = artifacts.require("./ConflictResolution.sol");
 const DiceLower = artifacts.require("./games/DiceLower.sol");
@@ -8,8 +9,7 @@ const Keno = artifacts.require("./games/Keno.sol");
 const Wheel = artifacts.require("./games/Wheel.sol");
 const Plinko = artifacts.require("./games/Plinko.sol");
 
-
-module.exports = async function(deployer, network, accounts) {
+module.exports = async function (deployer, network, accounts) {
     let serverAccount = "";
     let houseAccount = "";
     let chainId = 123456789;
@@ -26,7 +26,7 @@ module.exports = async function(deployer, network, accounts) {
         houseAccount = "0x71be1ace87248f3950bdfc4c89b4b3eed059f6f3";
         chainId = 1;
     } else {
-        throw "Invalid network!"
+        throw "Invalid network!";
     }
 
     await deployer.deploy(DiceLower);
@@ -47,7 +47,15 @@ module.exports = async function(deployer, network, accounts) {
 
     await deployer.deploy(
         ConflictResolution,
-        [DiceLower.address, DiceHigher.address, ChooseFrom12.address, FlipACoin.address, Keno.address, Wheel.address, Plinko.address],
+        [
+            DiceLower.address,
+            DiceHigher.address,
+            ChooseFrom12.address,
+            FlipACoin.address,
+            Keno.address,
+            Wheel.address,
+            Plinko.address,
+        ],
         {gas: 2000000}
     );
 
@@ -55,8 +63,8 @@ module.exports = async function(deployer, network, accounts) {
     await deployer.deploy(
         GameChannel,
         serverAccount,
-        1e16.toString(),
-        200e18.toString(),
+        (1e16).toString(),
+        (200e18).toString(),
         ConflictResolution.address,
         houseAccount,
         chainId,
@@ -66,7 +74,7 @@ module.exports = async function(deployer, network, accounts) {
     const gameChannel = await GameChannel.deployed();
 
     if (network === "development") {
-        await gameChannel.addHouseStake({from: accounts[0], value: 50e18.toString()});
+        await gameChannel.addHouseStake({from: accounts[0], value: (50e18).toString()});
         await gameChannel.activate({from: accounts[0]});
         await gameChannel.unpause({from: accounts[0]});
     }

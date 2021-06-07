@@ -4,9 +4,7 @@ import * as chai from "chai";
 
 import {MIN_BANKROLL} from "../utils/config";
 
-
 const expect = chai.expect;
-
 
 export const ZERO_SEED = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -19,7 +17,12 @@ export const shash3 = web3.utils.sha3(shash2) as string;
 
 export const BET_VALUE = new BN(maxBet(1, 1, MIN_BANKROLL.div(new BN(1e9)).toNumber(), 1)).mul(new BN(1e9));
 
-export async function checkGameStatusAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number) {
+export async function checkGameStatusAsync(
+    gameChannel: any,
+    gameId: number,
+    statusRef: number,
+    _reasonEndedRef: number
+): Promise<void> {
     // check game session state
     const game = await gameChannel.gameIdGame.call(gameId);
     const status = game[0].toNumber();
@@ -27,9 +30,19 @@ export async function checkGameStatusAsync(gameChannel: any, gameId: number, sta
     expect(status).to.equal(statusRef);
 }
 
-export async function checkGameStateAsync(gameChannel: any, gameId: number, statusRef: number, reasonEndedRef: number,
-                                   gameTypeRef: number, roundIdRef: number, numRef: number, betValueRef: BN,
-                                   balanceRef: BN, userSeedRef: string, serverSeedRef: string) {
+export async function checkGameStateAsync(
+    gameChannel: any,
+    gameId: number,
+    statusRef: number,
+    reasonEndedRef: number,
+    gameTypeRef: number,
+    roundIdRef: number,
+    numRef: number,
+    betValueRef: BN,
+    balanceRef: BN,
+    userSeedRef: string,
+    serverSeedRef: string
+): Promise<void> {
     const game = await gameChannel.gameIdGame.call(gameId);
 
     const status = game[0].toNumber();
@@ -49,7 +62,7 @@ export async function checkGameStateAsync(gameChannel: any, gameId: number, stat
     expect(serverSeed).to.equal(serverSeedRef);
 }
 
-export async function checkActiveGamesAsync(gameChannel: any, activeGamesRef: number) {
+export async function checkActiveGamesAsync(gameChannel: any, activeGamesRef: number): Promise<void> {
     const activeGames = await gameChannel.activeGames.call();
     expect(activeGames).to.eq.BN(activeGamesRef);
 }

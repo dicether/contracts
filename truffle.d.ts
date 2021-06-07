@@ -1,13 +1,13 @@
 declare interface Contract<T> {
-    "new"(): Promise<T>,
+    "new"(): Promise<T>;
 
-    deployed(): Promise<T>,
+    deployed(): Promise<T>;
 
-    at(address: string): T,
+    at(address: string): T;
 }
 
 interface Artifacts {
-    require(name: string): Contract<any>
+    require(name: string): Contract<any>;
 }
 
 declare const artifacts: Artifacts;

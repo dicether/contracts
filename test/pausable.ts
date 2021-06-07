@@ -1,14 +1,13 @@
 const GameChannel = artifacts.require("./GameChannel.sol");
-import * as chai from 'chai';
+import * as chai from "chai";
 
-import BlockchainLifecycle from './utils/BlockchainLifecycle';
-import {configureChai, TRANSACTION_ERROR} from './utils/util';
+import BlockchainLifecycle from "./utils/BlockchainLifecycle";
+import {configureChai, TRANSACTION_ERROR} from "./utils/util";
 
 configureChai();
 const expect = chai.expect;
 
-
-contract('Pausable', accounts => {
+contract("Pausable", (accounts) => {
     const owner = accounts[0];
     const notOwner = accounts[1];
 
@@ -27,14 +26,14 @@ contract('Pausable', accounts => {
         await blockchainLifecycle.revertSnapShotAsync();
     });
 
-    describe('pause', () => {
-        it('Should fail if non owner calls pause', async () => {
+    describe("pause", () => {
+        it("Should fail if non owner calls pause", async () => {
             await gameChannel.activate({from: owner});
             await gameChannel.unpause({from: owner});
             return expect(gameChannel.pause({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
-        it('Should pause contract', async () => {
+        it("Should pause contract", async () => {
             await gameChannel.activate({from: owner});
             await gameChannel.unpause({from: owner});
             await gameChannel.pause({from: owner});
@@ -43,13 +42,13 @@ contract('Pausable', accounts => {
         });
     });
 
-    describe('unpause', () => {
+    describe("unpause", () => {
         it("Should fail if non owner calls unpause", async () => {
             await gameChannel.activate({from: owner});
             return expect(gameChannel.unpause({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 
-        it('Should fail if non activated', async () => {
+        it("Should fail if non activated", async () => {
             return expect(gameChannel.unpause({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
         });
 

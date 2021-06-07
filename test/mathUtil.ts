@@ -1,18 +1,17 @@
 import BN from "bn.js";
 
 const MathUtilMock = artifacts.require("./mocks/MathUtilMock.sol");
-import * as chai from 'chai';
+import * as chai from "chai";
 
-import {configureChai, TRANSACTION_ERROR} from './utils/util';
+import {configureChai} from "./utils/util";
 
 configureChai();
 const expect = chai.expect;
 
-
-contract('MathUtilMock', () => {
+contract("MathUtilMock", () => {
     const MIN_INT = new BN(2).pow(new BN(255)).neg();
     let mathUtil: any;
-    
+
     before(async () => {
         mathUtil = await MathUtilMock.new();
     });
@@ -24,29 +23,29 @@ contract('MathUtilMock', () => {
         expect(res).to.eq.BN(a);
     });
 
-    it('min', async () => {
+    it("min", async () => {
         const a = 100;
         const b = 1;
         const res = await mathUtil.min(a, b);
         expect(res).to.eq.BN(b);
     });
 
-    describe('abs', () => {
-        it('Should work for positive number', async () => {
+    describe("abs", () => {
+        it("Should work for positive number", async () => {
             const a = 100;
             const res = await mathUtil.abs(a);
             expect(res).to.eq.BN(Math.abs(a));
         });
 
-        it('Should work for negative number', async () => {
+        it("Should work for negative number", async () => {
             const a = -100;
             const res = await mathUtil.abs(a);
             expect(res).to.eq.BN(Math.abs(a));
         });
 
-        it('Should work for MIN_INT', async () => {
+        it("Should work for MIN_INT", async () => {
             const res = await mathUtil.abs(MIN_INT);
             expect(res).to.eq.BN(MIN_INT.abs());
-        })
+        });
     });
 });
