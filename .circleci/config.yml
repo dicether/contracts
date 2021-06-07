@@ -46,11 +46,27 @@ jobs:
           at: ./
       - run: npm test
 
+  lint-tests:
+    docker:
+      # specify the version you desire here
+      - image: circleci/node:14.16.1
+
+    working_directory: ~/repo
+
+    steps:
+      - attach_workspace:
+          at: ./
+      - run: npm run eslint
+      - run: npm run prettier-check
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
       - test:
+          requires:
+            - build
+      - lint-tests:
           requires:
             - build
