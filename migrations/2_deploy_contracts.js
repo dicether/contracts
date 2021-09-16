@@ -74,7 +74,7 @@ module.exports = async function (deployer, network, accounts) {
     const gameChannel = await GameChannel.deployed();
 
     if (network === "development") {
-        await gameChannel.addHouseStake({from: accounts[0], value: (50e18).toString()});
+        await gameChannel.addHouseStake({from: accounts[0], value: (70e18).toString()});
         await gameChannel.activate({from: accounts[0]});
         await gameChannel.unpause({from: accounts[0]});
     }
