@@ -47,7 +47,6 @@ contract GameChannelConflict is GameChannelBase {
      * @param _serverHash Hash of server seed for this bet.
      * @param _userHash Hash of user seed for this bet.
      * @param _gameId Game session id.
-     * @param _contractAddress Address of this contract.
      * @param _userSig User signature of this bet.
      * @param _userAddress Address of user.
      * @param _serverSeed Server seed for this bet.
@@ -62,7 +61,6 @@ contract GameChannelConflict is GameChannelBase {
         bytes32 _serverHash,
         bytes32 _userHash,
         uint _gameId,
-        address _contractAddress,
         bytes memory _userSig,
         address payable _userAddress,
         bytes32 _serverSeed,
@@ -80,7 +78,7 @@ contract GameChannelConflict is GameChannelBase {
                 _serverHash,
                 _userHash,
                 _gameId,
-                _contractAddress,
+                address(this),
                 _userSig,
                 _userAddress
         );
@@ -110,7 +108,6 @@ contract GameChannelConflict is GameChannelBase {
      * @param _serverHash Hash of server seed for this bet.
      * @param _userHash Hash of user seed for this bet.
      * @param _gameId Game session id.
-     * @param _contractAddress Address of this contract.
      * @param _serverSig Server signature of this bet.
      * @param _userSeed User seed for this bet.
      */
@@ -123,7 +120,6 @@ contract GameChannelConflict is GameChannelBase {
         bytes32 _serverHash,
         bytes32 _userHash,
         uint _gameId,
-        address _contractAddress,
         bytes memory _serverSig,
         bytes32 _userSeed
     )
@@ -138,7 +134,7 @@ contract GameChannelConflict is GameChannelBase {
             _serverHash,
             _userHash,
             _gameId,
-            _contractAddress,
+            address(this),
             _serverSig,
             serverAddress
         );
