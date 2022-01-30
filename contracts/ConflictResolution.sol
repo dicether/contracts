@@ -60,14 +60,14 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
     /**
      * @return Max balance.
      */
-    function maxBalance() public view returns(int) {
+    function maxBalance() public pure returns(int) {
         return MAX_BALANCE;
     }
 
     /**
      * Calculate minimum needed house stake.
      */
-    function minHouseStake(uint activeGames) public view returns(uint) {
+    function minHouseStake(uint activeGames) public pure returns(uint) {
         return  MathUtil.min(activeGames, 1) * MIN_BANKROLL;
     }
 

@@ -23,12 +23,12 @@ contract DiceLower is GameInterface, Utilities {
         _;
     }
 
-    function maxBet(uint _betNum, uint _bankRoll) external onlyValidNum(_betNum) view returns(uint) {
+    function maxBet(uint _betNum, uint _bankRoll) external onlyValidNum(_betNum) pure returns(uint) {
         uint probability = _betNum.mul(Utilities.PROBABILITY_DIVISOR) / DICE_RANGE;
         return Utilities.maxBetFromProbability(probability, _bankRoll);
     }
 
-    function resultNumber(bytes32 _serverSeed, bytes32 _userSeed, uint _betNum) external onlyValidNum(_betNum) view returns(uint) {
+    function resultNumber(bytes32 _serverSeed, bytes32 _userSeed, uint _betNum) external onlyValidNum(_betNum) pure returns(uint) {
         uint randNum = Utilities.generateRandomNumber(_serverSeed, _userSeed);
         return randNum % DICE_RANGE;
     }
@@ -37,7 +37,7 @@ contract DiceLower is GameInterface, Utilities {
         external
         onlyValidNum(_betNum)
         onlyValidResultNum(_resultNum)
-        view
+        pure
         returns(int)
     {
         bool won = _resultNum < _betNum;
@@ -49,7 +49,7 @@ contract DiceLower is GameInterface, Utilities {
         }
     }
 
-    function maxUserProfit(uint _betNum, uint _betValue) external onlyValidNum(_betNum) view returns(int) {
+    function maxUserProfit(uint _betNum, uint _betValue) external onlyValidNum(_betNum) pure returns(int) {
         uint totalWon = _betValue.mul(DICE_RANGE).div(_betNum);
         return Utilities.calcProfitFromTotalWon(totalWon, _betValue);
     }

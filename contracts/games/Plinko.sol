@@ -65,7 +65,7 @@ contract Plinko is GameInterface, Utilities {
         return _bankRoll.mul(maxBetValue).div(MAX_BET_DIVIDER);
     }
 
-    function resultNumber(bytes32 _serverSeed, bytes32 _userSeed, uint _betNum) external onlyValidNum(_betNum) view returns(uint) {
+    function resultNumber(bytes32 _serverSeed, bytes32 _userSeed, uint _betNum) external onlyValidNum(_betNum) pure returns(uint) {
         uint randNum = Utilities.generateRandomNumber(_serverSeed, _userSeed);
         uint rows = getRows(_betNum);
         return randNum & ((1 << rows) - 1);

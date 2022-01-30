@@ -59,7 +59,7 @@ contract Keno is GameInterface, Utilities {
         return uint(MAX_BET[fields]).mul(_bankRoll).div(DIVIDER);
     }
 
-    function resultNumber(bytes32 _serverSeed, bytes32 _userSeed, uint _betNum) external onlyValidNum(_betNum) view returns(uint) {
+    function resultNumber(bytes32 _serverSeed, bytes32 _userSeed, uint _betNum) external onlyValidNum(_betNum) pure returns(uint) {
         uint resultNum = 0;
         bytes32 seed = keccak256(abi.encodePacked(_serverSeed, _userSeed));
 
