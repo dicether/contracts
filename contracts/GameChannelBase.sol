@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./ConflictResolutionInterface.sol";
 import "./ConflictResolutionManager.sol";
@@ -169,7 +169,6 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         address payable _houseAddress,
         uint _chainId
     )
-        public
         ConflictResolutionManager(_conflictResAddress)
     {
         require(_minStake > 0 && _minStake <= _maxStake);
@@ -205,7 +204,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         require(toTransfer > 0);
 
         pendingReturns[msg.sender] = 0;
-        msg.sender.transfer(toTransfer);
+        payable(msg.sender).transfer(toTransfer);
     }
 
     /**
@@ -258,7 +257,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         require(houseProfit <= 0 || houseProfit.castToUint() <= houseStake.sub(value));
 
         houseStake = houseStake.sub(value);
-        owner.transfer(value);
+        payable(owner).transfer(value);
     }
 
     /**
@@ -268,7 +267,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
         houseProfit = 0;
         uint toTransfer = houseStake;
         houseStake = 0;
-        owner.transfer(toTransfer);
+        payable(owner).transfer(toTransfer);
     }
 
     /**
@@ -325,7 +324,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _balance User's balance.
      */
     function payOut(address payable _userAddress, uint128 _stake, int _balance) internal {
-        int stakeInt = _stake;
+        int stakeInt = int(uint(_stake));
         int houseStakeInt = houseStake.castToInt();
 
         assert(_balance <= conflictRes.maxBalance());

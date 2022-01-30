@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "../SafeMath.sol";
 import "./GameInterface.sol";
@@ -14,7 +14,7 @@ contract Games {
      * @dev constructor
      * @param gameContracts addresses of different game implementations.
      */
-    constructor(address[] memory gameContracts) public {
+    constructor(address[] memory gameContracts) {
         for (uint i = 0; i < gameContracts.length; i++) {
             // set first GameInterface to 0 0 => start with i + 1
             games[i + 1] = GameInterface(gameContracts[i]);
@@ -82,7 +82,7 @@ contract Games {
      * @return game implementation contract.
      */
     function getGameImplementation(uint8 _gameType) private view returns(GameInterface) {
-        require(games[_gameType] != GameInterface(0), "Invalid game type");
+        require(address(games[_gameType]) != address(0), "Invalid game type");
         return games[_gameType];
 
     }

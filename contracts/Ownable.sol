@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 
 /**
@@ -7,8 +7,8 @@ pragma solidity ^0.5.0;
  * @author dicether
  */
 contract Ownable {
-    address payable public owner;
-    address payable public pendingOwner;
+    address public owner;
+    address public pendingOwner;
 
     event LogOwnerShipTransferred(address indexed previousOwner, address indexed newOwner);
     event LogOwnerShipTransferInitiated(address indexed previousOwner, address indexed newOwner);
@@ -32,7 +32,7 @@ contract Ownable {
     /**
      * @dev Set contract creator as initial owner
      */
-    constructor() public {
+    constructor() {
         owner = msg.sender;
         pendingOwner = address(0);
     }

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./ConflictResolutionInterface.sol";
 import "./Ownable.sol";
@@ -34,7 +34,7 @@ contract ConflictResolutionManager is Ownable {
      * @dev Constructor
      * @param _conflictResAddress conflict resolution contract address.
      */
-    constructor(address _conflictResAddress) public {
+    constructor(address _conflictResAddress) {
         conflictRes = ConflictResolutionInterface(_conflictResAddress);
     }
 

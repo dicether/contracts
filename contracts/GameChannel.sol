@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./GameChannelConflict.sol";
 
@@ -8,6 +8,7 @@ import "./GameChannelConflict.sol";
  * @author dicether
  */
 contract GameChannel is GameChannelConflict {
+    using SafeMath for uint;
     /**
      * @dev contract constructor
      * @param _serverAddress Server address.
@@ -25,7 +26,6 @@ contract GameChannel is GameChannelConflict {
         address payable _houseAddress,
         uint _chainId
     )
-        public
         GameChannelConflict(_serverAddress, _minStake, _maxStake, _conflictResAddress, _houseAddress, _chainId)
     {
         // nothing to do
@@ -156,7 +156,7 @@ contract GameChannel is GameChannelConflict {
                 serverAddress
         );
 
-        regularEndGame(msg.sender, _roundId, _balance, _gameId, _contractAddress);
+        regularEndGame(payable(msg.sender), _roundId, _balance, _gameId, _contractAddress);
     }
 
     /**
@@ -205,7 +205,7 @@ contract GameChannel is GameChannelConflict {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
         int maxBalance = conflictRes.maxBalance();
-        int gameStake = game.stake;
+        int gameStake = int(uint(game.stake));
 
         require(_gameId == gameId, "inv gameId");
         require(_roundId > 0, "inv roundId");

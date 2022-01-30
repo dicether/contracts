@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./GameInterface.sol";
 import "./Utilities.sol";
@@ -9,6 +9,7 @@ import "../SafeCast.sol";
 contract Plinko is GameInterface, Utilities {
     using SafeCast for uint;
     using SafeMath for uint;
+    using SafeMath for int;
 
     uint public constant MAX_BET_DIVIDER = 10000;
 
@@ -18,7 +19,7 @@ contract Plinko is GameInterface, Utilities {
 
     mapping (uint => mapping(uint => uint16[])) public PAYOUT;
 
-    constructor() public {
+    constructor() {
         MAX_BET[1][8] = 264;
         MAX_BET[1][12] = 607;
         MAX_BET[1][16] = 758;

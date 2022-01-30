@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./Pausable.sol";
 
@@ -16,6 +16,6 @@ contract Destroyable is Pausable {
      * @dev Destroy contract and transfer ether to owner.
      */
     function destroy() public onlyOwner onlyPausedSince(TIMEOUT_DESTROY) {
-        selfdestruct(owner);
+        selfdestruct(payable(owner));
     }
 }

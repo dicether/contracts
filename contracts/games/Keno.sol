@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./GameInterface.sol";
 import "./Utilities.sol";
@@ -9,6 +9,7 @@ import "../SafeCast.sol";
 contract Keno is GameInterface, Utilities {
     using SafeCast for uint;
     using SafeMath for uint;
+    using SafeMath for int;
 
     /// @dev divider for PAY_OUT and MAX_BET
     uint public constant DIVIDER = 1000;
@@ -27,7 +28,7 @@ contract Keno is GameInterface, Utilities {
 
     event LogGameCreated(uint num);
 
-    constructor() public {
+    constructor() {
         // setup payout table
         PAY_OUT[0]  = [0];
         PAY_OUT[1]  = [0, 3940];

@@ -30,7 +30,7 @@
   "license": "AGPL-3.0-only",
   "dependencies": {
     "@dicether/state-channel": "^1.0.0",
-    "truffle": "^5.3.9"
+    "truffle": "^5.4.31"
   },
   "devDependencies": {
     "@dicether/eslint-config": "^1.0.0",

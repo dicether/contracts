@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.11;
 
 import "./GameChannelBase.sol";
 
@@ -31,7 +31,6 @@ contract GameChannelConflict is GameChannelBase {
         address payable _houseAddress,
         uint _chainId
     )
-        public
         GameChannelBase(_serverAddress, _minStake, _maxStake, _conflictResAddress, _houseAddress, _chainId)
     {
         // nothing to do
@@ -148,7 +147,7 @@ contract GameChannelConflict is GameChannelBase {
             _userHash,
             _userSeed,
             _gameId,
-            msg.sender
+            payable(msg.sender)
         );
     }
 
@@ -158,7 +157,7 @@ contract GameChannelConflict is GameChannelBase {
      * @param _gameId Game session id.
      */
     function userCancelActiveGame(uint _gameId) public {
-        address payable userAddress = msg.sender;
+        address payable userAddress = payable(msg.sender);
         uint gameId = userGameId[userAddress];
         Game storage game = gameIdGame[gameId];
 
@@ -233,7 +232,7 @@ contract GameChannelConflict is GameChannelBase {
     * to give the server a chance to respond.
     */
     function userForceGameEnd(uint _gameId) public {
-        address payable userAddress = msg.sender;
+        address payable userAddress = payable(msg.sender);
         uint gameId = userGameId[userAddress];
         Game storage game = gameIdGame[gameId];
 
@@ -282,7 +281,7 @@ contract GameChannelConflict is GameChannelBase {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
         int maxBalance = conflictRes.maxBalance();
-        int gameStake = game.stake;
+        int gameStake = int(uint(game.stake));
 
         require(gameId == _gameId, "inv gameId");
         require(_roundId > 0, "inv roundId");
@@ -345,7 +344,7 @@ contract GameChannelConflict is GameChannelBase {
         uint gameId = userGameId[_userAddress];
         Game storage game = gameIdGame[gameId];
         int maxBalance = conflictRes.maxBalance();
-        int gameStake = game.stake;
+        int gameStake = int(uint(game.stake));
 
         require(gameId == _gameId, "inv gameId");
         require(_roundId > 0, "inv roundId");
@@ -390,7 +389,7 @@ contract GameChannelConflict is GameChannelBase {
         int newBalance = -conflictRes.conflictEndFine();
 
         // do not allow balance below user stake
-        int stake = _game.stake;
+        int stake = int(uint(_game.stake));
         if (newBalance < -stake) {
             newBalance = -stake;
         }
