@@ -24,7 +24,7 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
     uint public constant USER_TIMEOUT = 48 hours;
 
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
-    uint public constant MIN_BANKROLL = 50e18;
+    uint public constant MIN_BANKROLL = 9e18; /// min 9 ETH
 
     int public constant NOT_ENDED_FINE = 4e16; /// 0.04 ether
 
