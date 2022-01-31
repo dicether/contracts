@@ -20,8 +20,8 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
     using SafeMath for int;
     using SafeMath for uint;
 
-    uint public constant SERVER_TIMEOUT = 6 hours;
-    uint public constant USER_TIMEOUT = 6 hours;
+    uint public constant SERVER_TIMEOUT = 12 hours;
+    uint public constant USER_TIMEOUT = 48 hours;
 
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
     uint public constant MIN_BANKROLL = 50e18;
