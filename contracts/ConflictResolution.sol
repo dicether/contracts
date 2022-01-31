@@ -26,9 +26,9 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
     uint public constant MIN_BET_VALUE = 1e13; /// min 0.00001 ether bet
     uint public constant MIN_BANKROLL = 50e18;
 
-    int public constant NOT_ENDED_FINE = 1e16; /// 0.01 ether
+    int public constant NOT_ENDED_FINE = 4e16; /// 0.04 ether
 
-    int public constant CONFLICT_END_FINE = 5e15; /// 0.005 ether
+    int public constant CONFLICT_END_FINE = 1e16; /// 0.01 ether
 
     int public constant MAX_BALANCE = int(MIN_BANKROLL / 2);
 
