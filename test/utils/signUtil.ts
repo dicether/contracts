@@ -58,6 +58,7 @@ export function signStartData(
 ): string {
     const hash = ethUtil.toBuffer(
         web3.utils.soliditySha3(
+            {t: "uint", v: 123456789},
             {t: "address", v: contractAddress},
             {t: "address", v: user},
             {t: "uint", v: lastGameId},

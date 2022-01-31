@@ -60,7 +60,7 @@ contract GameChannel is GameChannelConflict {
         require(previousGameId == _previousGameId, "inv gamePrevGameId");
         require(block.timestamp < _createBefore, "expired");
 
-        verifyCreateSig(msg.sender, _previousGameId, _createBefore, _serverEndHash, _serverSig);
+        verifyCreateSig(block.chainid, msg.sender, _previousGameId, _createBefore, _serverEndHash, _serverSig);
 
         uint gameId = gameIdCntr++;
         userGameId[msg.sender] = gameId;
@@ -169,6 +169,7 @@ contract GameChannel is GameChannelConflict {
      * @param _serverSig Server signature.
      */
     function verifyCreateSig(
+        uint chainId,
         address _userAddress,
         uint _previousGameId,
         uint _createBefore,
@@ -179,7 +180,7 @@ contract GameChannel is GameChannelConflict {
     {
         address contractAddress = address(this);
         bytes32 hash = keccak256(abi.encodePacked(
-            contractAddress, _userAddress, _previousGameId, _createBefore, _serverEndHash
+            chainId, contractAddress, _userAddress, _previousGameId, _createBefore, _serverEndHash
         ));
 
         verify(hash, _serverSig, serverAddress);
