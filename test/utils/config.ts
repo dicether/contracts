@@ -1,7 +1,7 @@
 import BN from "bn.js";
 
 export const WITHDRAW_ALL_TIMEOUT = 3 * 24 * 60 * 60;
-export const INITIAL_HOUSE_STAKE = new BN((50e18).toString());
+export const INITIAL_HOUSE_STAKE = new BN((10e18).toString());
 export const MIN_BANKROLL = new BN((9e18).toString());
 export const MIN_STAKE = new BN((1e16).toString());
 export const MAX_STAKE = new BN((200e18).toString());
