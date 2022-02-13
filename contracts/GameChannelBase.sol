@@ -160,15 +160,13 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
      * @param _maxStake Max value user can deposit to create game session.
      * @param _conflictResAddress Conflict resolution contract address.
      * @param _houseAddress House address to move profit to.
-     * @param _chainId Chain id for signature domain.
      */
     constructor(
         address _serverAddress,
         uint128 _minStake,
         uint128 _maxStake,
         address _conflictResAddress,
-        address payable _houseAddress,
-        uint _chainId
+        address payable _houseAddress
     )
         ConflictResolutionManager(_conflictResAddress)
     {
@@ -184,7 +182,7 @@ contract GameChannelBase is Destroyable, ConflictResolutionManager {
             EIP712DOMAIN_TYPEHASH,
             keccak256("Dicether"),
             keccak256("2"),
-            _chainId,
+            block.chainid,
             address(this)
         ));
     }

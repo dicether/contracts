@@ -22,17 +22,15 @@ contract GameChannelConflict is GameChannelBase {
      * @param _maxStake Max value user can deposit to create game session.
      * @param _conflictResAddress Conflict resolution contract address
      * @param _houseAddress House address to move profit to
-     * @param _chainId Chain id for signature domain.
      */
     constructor(
         address _serverAddress,
         uint128 _minStake,
         uint128 _maxStake,
         address _conflictResAddress,
-        address payable _houseAddress,
-        uint _chainId
+        address payable _houseAddress
     )
-        GameChannelBase(_serverAddress, _minStake, _maxStake, _conflictResAddress, _houseAddress, _chainId)
+        GameChannelBase(_serverAddress, _minStake, _maxStake, _conflictResAddress, _houseAddress)
     {
         // nothing to do
     }
