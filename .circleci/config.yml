@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/node:14.16.1
+      - image: circleci/node:22.16.0
 
     working_directory: ~/repo
 
@@ -13,16 +13,14 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v1-dependencies-{{ checksum "package-lock.json" }}
 
       - run: npm i
 
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
 
       - run: npm run build
 
@@ -34,10 +32,7 @@ jobs:
   test:
     docker:
       # specify the version you desire here
-      - image: circleci/node:14.16.1
-
-      - image: trufflesuite/ganache-cli:v6.12.1
-        command: ganache-cli --mnemonic "test" -e 1000 -i 123456789 --chainId 123456789
+      - image: circleci/node:22.16.0
 
     working_directory: ~/repo
 
@@ -49,7 +44,7 @@ jobs:
   lint-tests:
     docker:
       # specify the version you desire here
-      - image: circleci/node:14.16.1
+      - image: circleci/node:22.16.0
 
     working_directory: ~/repo
 

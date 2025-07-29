@@ -1,51 +1,48 @@
-import BN from "bn.js";
+import {reset} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import {expect} from "chai";
+import hre from "hardhat";
+import {ContractTypesMap} from "hardhat/types";
 
-const MathUtilMock = artifacts.require("./mocks/MathUtilMock.sol");
-import * as chai from "chai";
+describe("MathUtilMock", () => {
+    const MAX_INT = 2n ** 255n - 1n;
 
-import {configureChai} from "./utils/util";
+    let mathUtil: ContractTypesMap["MathUtilMock"];
 
-configureChai();
-const expect = chai.expect;
-
-contract("MathUtilMock", () => {
-    const MAX_INT = new BN(2).pow(new BN(255)).subn(1);
-    let mathUtil: any;
-
-    before(async () => {
-        mathUtil = await MathUtilMock.new();
+    before(async function () {
+        await reset();
+        mathUtil = await hre.viem.deployContract("MathUtilMock");
     });
 
     it("max", async () => {
-        const a = 100;
-        const b = 1;
-        const res = await mathUtil.max(a, b);
-        expect(res).to.eq.BN(a);
+        const a = 100n;
+        const b = 1n;
+        const res = await mathUtil.read.max([a, b]);
+        expect(res).to.eq(a);
     });
 
     it("min", async () => {
-        const a = 100;
-        const b = 1;
-        const res = await mathUtil.min(a, b);
-        expect(res).to.eq.BN(b);
+        const a = 100n;
+        const b = 1n;
+        const res = await mathUtil.read.min([a, b]);
+        expect(res).to.eq(b);
     });
 
     describe("abs", () => {
         it("Should work for positive number", async () => {
-            const a = 100;
-            const res = await mathUtil.abs(a);
-            expect(res).to.eq.BN(Math.abs(a));
+            const a = 100n;
+            const res = await mathUtil.read.abs([a]);
+            expect(res).to.eq(a < 0n ? -a : a);
         });
 
         it("Should work for negative number", async () => {
-            const a = -100;
-            const res = await mathUtil.abs(a);
-            expect(res).to.eq.BN(Math.abs(a));
+            const a = -100n;
+            const res = await mathUtil.read.abs([a]);
+            expect(res).to.eq(a < 0n ? -a : a);
         });
 
         it("Should work for -MAX_INT", async () => {
-            const res = await mathUtil.abs(MAX_INT.neg());
-            expect(res).to.eq.BN(MAX_INT);
+            const res = await mathUtil.read.abs([-MAX_INT]);
+            expect(res).to.eq(MAX_INT);
         });
     });
 });

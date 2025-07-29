@@ -1,48 +1,44 @@
-const SafeCastMock = artifacts.require("./mocks/SafeCastMock.sol");
-import BN from "bn.js";
-import * as chai from "chai";
+import {expect} from "chai";
+import hre from "hardhat";
+import {ContractTypesMap} from "hardhat/types";
 
-import {configureChai, TRANSACTION_ERROR} from "./utils/util";
+describe("SafeCast", () => {
+    const MAX_INT = 2n ** 255n - 1n;
 
-configureChai();
-const expect = chai.expect;
-
-contract("SafeCast", () => {
-    const MAX_INT = new BN(2).pow(new BN(255)).subn(1);
-
-    let safeCast: any;
+    let safeCast: ContractTypesMap["SafeCastMock"];
 
     before(async function () {
-        safeCast = await SafeCastMock.new();
+        await hre.network.provider.send("hardhat_reset");
+        safeCast = await hre.viem.deployContract("SafeCastMock");
     });
 
     describe("castToInt", function () {
         it("casts correctly", async function () {
-            const a = new BN(5678);
+            const a = 5678n;
 
-            const result = await safeCast.castToInt(a);
-            expect(result).to.eq.BN(a);
+            const result = await safeCast.read.castToInt([a]);
+            expect(result).to.eq(a);
         });
 
         it("throws an error if to large", async function () {
-            const a = new BN(MAX_INT.addn(1));
+            const a = MAX_INT + 1n;
 
-            await expect(safeCast.castToInt(a)).to.be.rejectedWith(TRANSACTION_ERROR);
+            await expect(safeCast.read.castToInt([a])).to.be.rejectedWith("Assertion error");
         });
     });
 
     describe("castToUint", function () {
         it("casts correctly", async function () {
-            const a = new BN(5678);
+            const a = 5678n;
 
-            const result = await safeCast.castToUint(a);
-            expect(result).to.eq.BN(a);
+            const result = await safeCast.read.castToUint([a]);
+            expect(result).to.eq(a);
         });
 
         it("throws an error if negative", async function () {
-            const a = new BN(-1);
+            const a = -1n;
 
-            await expect(safeCast.castToUint(a)).to.be.rejectedWith(TRANSACTION_ERROR);
+            await expect(safeCast.read.castToUint([a])).to.be.rejectedWith("Assertion error");
         });
     });
 });

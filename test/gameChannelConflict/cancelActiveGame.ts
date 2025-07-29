@@ -1,147 +1,129 @@
 import {GameStatus, ReasonEnded} from "@dicether/state-channel";
-import * as chai from "chai";
+import {loadFixture, reset} from "@nomicfoundation/hardhat-network-helpers";
+import {expect} from "chai";
 
-import BlockchainLifecycle from "../utils/BlockchainLifecycle";
-import {CONFLICT_END_FINE, INITIAL_HOUSE_STAKE, MAX_STAKE} from "../utils/config";
-import {configureChai, createGame, getBalance, TRANSACTION_ERROR} from "../utils/util";
-import {checkActiveGamesAsync, checkGameStatusAsync, phash3, shash3} from "./util";
+import {checkActiveGamesAsync, checkGameStatusAsync, createGameFixture, phash3, shash3} from "./util";
+import {CONFLICT_END_FINE, MAX_STAKE} from "../utils/config";
+import {createGame, getBalance} from "../utils/util";
 
-const GameChannel = artifacts.require("./GameChannel.sol");
+export const TRANSACTION_ERROR = "Transaction reverted without a reason";
 
-configureChai();
-const expect = chai.expect;
+describe("serverCancelActiveGame", () => {
+    const gameId = 1n;
+    const stake = MAX_STAKE;
 
-contract("GameChannelConflict", (accounts) => {
-    const owner = accounts[0];
-    const server = accounts[1];
-    const user = accounts[2];
-    const user2 = accounts[3];
-
-    const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
-    let gameChannel: any;
-
-    before(async () => {
-        gameChannel = await GameChannel.deployed();
-        await gameChannel.addHouseStake({from: owner, value: INITIAL_HOUSE_STAKE});
-        await gameChannel.activate({from: owner});
-        await gameChannel.unpause({from: owner});
+    before(async function () {
+        await reset();
     });
 
-    beforeEach(async () => {
-        await blockchainLifecycle.takeSnapshotAsync();
+    it("Should fail if wrong gameId", async () => {
+        const {gameChannel, user1: user, server} = await loadFixture(createGameFixture);
+
+        await expect(gameChannel.write.serverCancelActiveGame([user, 2n], {account: server})).to.be.rejectedWith(
+            "inv gameId",
+        );
     });
 
-    afterEach(async () => {
-        await blockchainLifecycle.revertSnapShotAsync();
+    it("Should fail if game status not active", async () => {
+        const {gameChannel, user1: user, server} = await loadFixture(createGameFixture);
+
+        await gameChannel.write.serverCancelActiveGame([user, gameId], {account: server});
+
+        await expect(gameChannel.write.serverCancelActiveGame([user, gameId], {account: server})).to.be.rejectedWith(
+            TRANSACTION_ERROR,
+        );
     });
 
-    describe("serverCancelActiveGame", () => {
-        const gameId = 1;
-        const stake = MAX_STAKE;
+    it("Should fail if wrong user address", async () => {
+        const {gameChannel, user2, server} = await loadFixture(createGameFixture);
 
-        beforeEach(async () => {
-            await createGame(gameChannel, server, user, shash3, phash3, stake);
-        });
+        await createGame(gameChannel, server, user2, shash3, phash3, stake);
 
-        it("Should fail if wrong gameId", async () => {
-            await createGame(gameChannel, server, user2, shash3, phash3, stake);
-
-            return expect(gameChannel.serverCancelActiveGame(user, 2, {from: server})).to.be.rejectedWith(
-                TRANSACTION_ERROR
-            );
-        });
-
-        it("Should fail if game status not active", async () => {
-            await gameChannel.userCancelActiveGame(1, {from: user});
-
-            return expect(gameChannel.userCancelActiveGame(2, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should fail if wrong user address", async () => {
-            await createGame(gameChannel, server, user2, shash3, phash3, stake);
-
-            return expect(gameChannel.serverCancelActiveGame(user2, 1, {from: server})).to.be.rejectedWith(
-                TRANSACTION_ERROR
-            );
-        });
-
-        it("Should succeed if already userCancelActiveGame called by user", async () => {
-            await gameChannel.userCancelActiveGame(1, {from: user});
-
-            const contractBalanceBefore = await getBalance(gameChannel.address);
-            const houseProfitBefore = await gameChannel.houseProfit.call();
-            const houseStakeBefore = await gameChannel.houseStake.call();
-
-            await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
-
-            const contractBalanceAfter = await getBalance(gameChannel.address);
-            const houseProfitAfter = await gameChannel.houseProfit.call();
-            const houseStakeAfter = await gameChannel.houseStake.call();
-
-            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(CONFLICT_END_FINE));
-            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(CONFLICT_END_FINE));
-            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(CONFLICT_END_FINE));
-
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
-
-            await checkActiveGamesAsync(gameChannel, 0);
-        });
-
-        it("Should succeed", async () => {
-            await gameChannel.serverCancelActiveGame(user, gameId, {from: server});
-
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.SERVER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
-        });
+        await expect(gameChannel.write.serverCancelActiveGame([user2, 1n], {account: server})).to.be.rejectedWith(
+            "inv gameId",
+        );
     });
 
-    describe("userCancelActiveGame", () => {
-        const gameId = 1;
-        const stake = MAX_STAKE;
+    it("Should succeed if already userCancelActiveGame called by user", async () => {
+        const {gameChannel, user1: user, server} = await loadFixture(createGameFixture);
 
-        beforeEach(async () => {
-            await createGame(gameChannel, server, user, shash3, phash3, stake);
-        });
+        await gameChannel.write.userCancelActiveGame([gameId], {account: user});
 
-        it("Should fail if wrong gameId", async () => {
-            await gameChannel.userCancelActiveGame(gameId, {from: user});
+        const contractBalanceBefore = await getBalance(gameChannel.address);
+        const houseProfitBefore = await gameChannel.read.houseProfit();
+        const houseStakeBefore = await gameChannel.read.houseStake();
 
-            return expect(gameChannel.userCancelActiveGame(2, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
+        await gameChannel.write.serverCancelActiveGame([user, gameId], {account: server});
 
-        it("Should fail if game status not active", async () => {
-            await gameChannel.userCancelActiveGame(gameId, {from: user});
+        const contractBalanceAfter = await getBalance(gameChannel.address);
+        const houseProfitAfter = await gameChannel.read.houseProfit();
+        const houseStakeAfter = await gameChannel.read.houseStake();
 
-            return expect(gameChannel.userCancelActiveGame(2, {from: user})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
+        expect(contractBalanceAfter).to.eq(contractBalanceBefore - stake + CONFLICT_END_FINE);
+        expect(houseProfitAfter).to.eq(houseProfitBefore + CONFLICT_END_FINE);
+        expect(houseStakeAfter).to.eq(houseStakeBefore + CONFLICT_END_FINE);
 
-        it("Should succeed if already serverCancelActiveGame called by server", async () => {
-            await gameChannel.serverCancelActiveGame(user, 1, {from: server});
+        await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
 
-            const contractBalanceBefore = await getBalance(gameChannel.address);
-            const houseProfitBefore = await gameChannel.houseProfit.call();
-            const houseStakeBefore = await gameChannel.houseStake.call();
+        await checkActiveGamesAsync(gameChannel, 0n);
+    });
 
-            await gameChannel.userCancelActiveGame(gameId, {from: user});
+    it("Should succeed", async () => {
+        const {gameChannel, user1: user, server} = await loadFixture(createGameFixture);
+        await gameChannel.write.serverCancelActiveGame([user, gameId], {account: server});
 
-            const contractBalanceAfter = await getBalance(gameChannel.address);
-            const houseProfitAfter = await gameChannel.houseProfit.call();
-            const houseStakeAfter = await gameChannel.houseStake.call();
+        await checkGameStatusAsync(gameChannel, gameId, GameStatus.SERVER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
+    });
+});
 
-            expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(stake).add(CONFLICT_END_FINE));
-            expect(houseProfitAfter).to.eq.BN(houseProfitBefore.add(CONFLICT_END_FINE));
-            expect(houseStakeAfter).to.eq.BN(houseStakeBefore.add(CONFLICT_END_FINE));
+describe("userCancelActiveGame", () => {
+    const gameId = 1n;
+    const stake = MAX_STAKE;
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
+    it("Should fail if wrong gameId", async () => {
+        const {gameChannel, user1: user} = await loadFixture(createGameFixture);
+        await gameChannel.write.userCancelActiveGame([gameId], {account: user});
 
-            await checkActiveGamesAsync(gameChannel, 0);
-        });
+        await expect(gameChannel.write.userCancelActiveGame([2n], {account: user})).to.be.rejectedWith("inv gameId");
+    });
 
-        it("Should succeed", async () => {
-            await gameChannel.userCancelActiveGame(gameId, {from: user});
+    it("Should fail if game status not active", async () => {
+        const {gameChannel, user1: user} = await loadFixture(createGameFixture);
+        await gameChannel.write.userCancelActiveGame([gameId], {account: user});
 
-            await checkGameStatusAsync(gameChannel, gameId, GameStatus.USER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
+        await expect(gameChannel.write.userCancelActiveGame([1n], {account: user})).to.be.rejectedWith(
+            TRANSACTION_ERROR,
+        );
+    });
 
-            await checkActiveGamesAsync(gameChannel, 1);
-        });
+    it("Should succeed if already serverCancelActiveGame called by server", async () => {
+        const {gameChannel, user1: user, server} = await loadFixture(createGameFixture);
+        await gameChannel.write.serverCancelActiveGame([user, 1n], {account: server});
+
+        const contractBalanceBefore = await getBalance(gameChannel.address);
+        const houseProfitBefore = await gameChannel.read.houseProfit();
+        const houseStakeBefore = await gameChannel.read.houseStake();
+
+        await gameChannel.write.userCancelActiveGame([gameId], {account: user});
+
+        const contractBalanceAfter = await getBalance(gameChannel.address);
+        const houseProfitAfter = await gameChannel.read.houseProfit();
+        const houseStakeAfter = await gameChannel.read.houseStake();
+
+        expect(contractBalanceAfter).to.eq(contractBalanceBefore - stake + CONFLICT_END_FINE);
+        expect(houseProfitAfter).to.eq(houseProfitBefore + CONFLICT_END_FINE);
+        expect(houseStakeAfter).to.eq(houseStakeBefore + CONFLICT_END_FINE);
+
+        await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.CONFLICT_ENDED);
+
+        await checkActiveGamesAsync(gameChannel, 0n);
+    });
+
+    it("Should succeed", async () => {
+        const {gameChannel, user1: user} = await loadFixture(createGameFixture);
+        await gameChannel.write.userCancelActiveGame([gameId], {account: user});
+
+        await checkGameStatusAsync(gameChannel, gameId, GameStatus.USER_INITIATED_END, ReasonEnded.REGULAR_ENDED);
+        await checkActiveGamesAsync(gameChannel, 1n);
     });
 });

@@ -1,43 +1,26 @@
-const GameChannel = artifacts.require("./GameChannel.sol");
-import * as chai from "chai";
+import {loadFixture, reset} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import {expect} from "chai";
 
-import BlockchainLifecycle from "./utils/BlockchainLifecycle";
-import {configureChai, TRANSACTION_ERROR} from "./utils/util";
+import {gameChannelFixture} from "./gameChannelFixture";
 
-configureChai();
-const expect = chai.expect;
-
-contract("Activatable", (accounts) => {
-    const owner = accounts[0];
-    const notOwner = accounts[1];
-
-    const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
-    let gameChannel: any;
-
-    before(async () => {
-        gameChannel = await GameChannel.deployed();
+describe("Activatable", () => {
+    before(async function () {
+        await reset();
     });
 
-    beforeEach(async () => {
-        await blockchainLifecycle.takeSnapshotAsync();
+    it("Should initial not be activated", async () => {
+        const {gameChannel} = await loadFixture(gameChannelFixture);
+        expect(await gameChannel.read.activated()).to.equal(false);
     });
 
-    afterEach(async () => {
-        await blockchainLifecycle.revertSnapShotAsync();
+    it("Should fail if non owner calls activate", async () => {
+        const {gameChannel, other} = await loadFixture(gameChannelFixture);
+        await expect(gameChannel.write.activate({account: other})).to.be.rejectedWith("reverted without a reason");
     });
 
-    describe("activate", () => {
-        it("Should initial not be activated", async () => {
-            expect(await gameChannel.activated.call()).to.equal(false);
-        });
-
-        it("Should fail if non owner calls activate", async () => {
-            return expect(gameChannel.activate({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
-
-        it("Should succeed", async () => {
-            await gameChannel.activate({from: owner});
-            expect(await gameChannel.activated.call()).to.equal(true);
-        });
+    it("Should succeed", async () => {
+        const {gameChannel, owner} = await loadFixture(gameChannelFixture);
+        await gameChannel.write.activate({account: owner});
+        expect(await gameChannel.read.activated()).to.equal(true);
     });
 });

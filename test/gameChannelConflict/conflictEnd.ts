@@ -1,17 +1,16 @@
 import {calcNewBalance, GameStatus, GameType, ReasonEnded, fromWeiToGwei, fromGweiToWei} from "@dicether/state-channel";
-import BN from "bn.js";
-import * as chai from "chai";
-import * as leche from "leche";
+import {loadFixture, reset} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import {expect} from "chai";
+import {ContractTypesMap} from "hardhat/types";
+import {Address, Hex} from "viem";
 
-import BlockchainLifecycle from "../utils/BlockchainLifecycle";
-import {CONFLICT_END_FINE, INITIAL_HOUSE_STAKE, MAX_BALANCE, MAX_STAKE} from "../utils/config";
-import {signData} from "../utils/signUtil";
-import {configureChai, createGame, getBalance, max, TRANSACTION_ERROR} from "../utils/util";
-
+import {InvalidGameTypes, ValidGameTypes} from "./GameTypes";
 import {
     BET_VALUE,
     checkGameStateAsync,
     checkGameStatusAsync,
+    createGameFixture,
+    CreateGameFixtureReturn,
     phash1,
     phash2,
     phash3,
@@ -20,58 +19,122 @@ import {
     shash3,
     ZERO_SEED,
 } from "./util";
+import {CONFLICT_END_FINE, MAX_BALANCE} from "../utils/config";
+import {signData} from "../utils/signUtil";
+import {createGame, getBalance, maxBigInt} from "../utils/util";
 
-const GameChannel = artifacts.require("./GameChannel.sol");
+export const TRANSACTION_ERROR = "Transaction reverted without a reason";
 
-configureChai();
-const expect = chai.expect;
-
-const withData = leche.withData;
-
-contract("GameChannelConflict", (accounts) => {
-    const owner = accounts[0];
-    const server = accounts[1];
-    const user = accounts[2];
-    const user2 = accounts[3];
-
-    const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
-    let gameChannel: any;
-
-    before(async () => {
-        gameChannel = await GameChannel.deployed();
-        await gameChannel.addHouseStake({from: owner, value: INITIAL_HOUSE_STAKE});
-        await gameChannel.activate({from: owner});
-        await gameChannel.unpause({from: owner});
+describe("serverEndConflict", () => {
+    before(async function () {
+        await reset();
     });
 
-    beforeEach(async () => {
-        await blockchainLifecycle.takeSnapshotAsync();
-    });
+    interface DefaultData {
+        roundId: number;
+        gameType: number;
+        num: bigint;
+        value: bigint;
+        balance: bigint;
+        serverHash: Hex;
+        userHash: Hex;
+        gameId: number;
+        contractAddress: Address;
+        userAddress: Address;
+        serverSeed: Hex;
+        userSeed: Hex;
+        signer: Address;
+        from: Address;
+    }
 
-    afterEach(async () => {
-        await blockchainLifecycle.revertSnapShotAsync();
-    });
+    const serverEndConfigFailTest = async (
+        error: string,
+        gameChannel: ContractTypesMap["GameChannel"],
+        d: DefaultData,
+    ) => {
+        const {
+            roundId,
+            value,
+            balance,
+            serverHash,
+            userHash,
+            gameId,
+            userSeed,
+            serverSeed,
+            userAddress,
+            gameType,
+            contractAddress,
+            num,
+            signer,
+            from,
+        } = d;
+        const userSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            gameId,
+            contractAddress,
+            signer,
+        );
 
-    describe("serverEndConflict", () => {
-        const stake = MAX_STAKE;
+        await expect(
+            gameChannel.write.serverEndGameConflict(
+                [
+                    roundId,
+                    gameType,
+                    BigInt(num),
+                    value,
+                    balance,
+                    serverHash,
+                    userHash,
+                    BigInt(gameId),
+                    userSig,
+                    userAddress,
+                    serverSeed,
+                    userSeed,
+                ],
+                {account: from},
+            ),
+        ).to.be.rejectedWith(error);
+    };
 
-        let contractAddress: string;
+    const defaultData = {
+        roundId: 10,
+        gameType: 1,
+        num: 80n,
+        value: BET_VALUE,
+        balance: MAX_BALANCE / 2n,
+        serverHash: shash2,
+        userHash: phash2,
+        gameId: 1n,
+        serverSeed: shash1,
+        userSeed: phash1,
+    };
 
-        beforeEach(async () => {
-            contractAddress = gameChannel.address;
-            await createGame(gameChannel, server, user, shash3, phash3, stake);
-        });
+    async function testHelper(
+        error: string,
+        dataGen: (
+            testData: DefaultData,
+            gameFixtureData: CreateGameFixtureReturn,
+        ) => Promise<DefaultData> | DefaultData,
+    ) {
+        const gameFixtureData = await loadFixture(createGameFixture);
+        const {user1: user, server, gameChannel} = gameFixtureData;
 
-        const defaultData = {
+        const defaultData: DefaultData = {
             roundId: 10,
             gameType: 1,
-            num: 80,
+            num: 80n,
             value: BET_VALUE,
-            balance: MAX_BALANCE.divn(2),
+            balance: MAX_BALANCE / 2n,
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
-            contractAddress: () => contractAddress,
+            contractAddress: gameChannel.address,
             userAddress: user,
             serverSeed: shash1,
             userSeed: phash1,
@@ -79,932 +142,664 @@ contract("GameChannelConflict", (accounts) => {
             from: server,
         };
 
-        withData(
-            {
-                "not server": {
-                    ...defaultData,
-                    from: user2,
-                },
-                "wrong round Id": {
-                    ...defaultData,
-                    roundId: 0,
-                },
-                "wrong sig": {
-                    ...defaultData,
-                    signer: user2,
-                },
-                "wrong user seed": {
-                    ...defaultData,
-                    userSeed: phash2,
-                },
-                "wrong server seed": {
-                    ...defaultData,
-                    serverSeed: shash2,
-                },
-                "wrong game type": {
-                    ...defaultData,
-                    gameType: 0,
-                },
-                "too low number game type 1": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 0,
-                },
-                "too high number game type 1": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 99,
-                },
-                "too low number game type 2": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 0,
-                },
-                "too high number game type 2": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 99,
-                },
-                "too low number game type 3": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: 0,
-                },
-                "too high number game type 3": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: Math.pow(2, 12) - 1,
-                },
-                "too low balance": {
-                    ...defaultData,
-                    balance: stake.neg().subn(1),
-                },
-                "too high balance": {
-                    ...defaultData,
-                    balance: MAX_BALANCE.addn(1),
-                },
-                "wrong contract address": {
-                    ...defaultData,
-                    contractAddress: () => accounts[4],
-                },
-            },
-            (d: typeof defaultData) => {
-                it("Should fail", async () => {
-                    const userSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        d.signer
-                    );
+        return await serverEndConfigFailTest(error, gameChannel, await dataGen(defaultData, gameFixtureData));
+    }
 
-                    return expect(
-                        gameChannel.serverEndGameConflict(
-                            d.roundId,
-                            d.gameType,
-                            d.num,
-                            d.value,
-                            d.balance,
-                            d.serverHash,
-                            d.userHash,
-                            d.gameId,
-                            userSig,
-                            d.userAddress,
-                            d.serverSeed,
-                            d.userSeed,
-                            {from: d.from}
-                        )
-                    ).to.be.rejectedWith(TRANSACTION_ERROR);
-                });
-            }
+    it("Should fail not server", async () => {
+        return testHelper("without a reason", (defaultData, {user2}) => ({...defaultData, from: user2}));
+    });
+
+    it("Should fail wrong round Id", async () => {
+        return testHelper("inv roundId", (defaultData, _) => ({...defaultData, roundId: 0}));
+    });
+
+    it("Should fail wrong sig", async () => {
+        return testHelper("inv sig", (defaultData, {user2}) => ({...defaultData, signer: user2}));
+    });
+
+    it("Should fail wrong user seed", async () => {
+        return testHelper("inv userSeed", (defaultData, _) => ({...defaultData, userSeed: shash2}));
+    });
+
+    it("Should fail wrong game type", async () => {
+        return testHelper("Invalid game type", (defaultData, _) => ({...defaultData, gameType: 0}));
+    });
+
+    it("Should fail too low balance", async () => {
+        return testHelper("inv balance", (defaultData, {stake}) => ({...defaultData, balance: -stake - BigInt(1e9)}));
+    });
+
+    it("Should fail too high balance", async () => {
+        return testHelper("inv balance", (defaultData, _) => ({...defaultData, balance: MAX_BALANCE + BigInt(1e9)}));
+    });
+
+    it("Should fail wrong contract address", async () => {
+        return testHelper("inv sig", (defaultData, {other}) => ({...defaultData, contractAddress: other}));
+    });
+
+    it("Should fail with too low number game type 1", async () => {
+        return testHelper("Invalid num", (defaultData, _) => ({...defaultData, gameType: 1, num: 0n}));
+    });
+
+    it("Should fail with too high number game type 1", async () => {
+        //@ todo: We get negativ profit for user => Do not allow bet 99
+        return testHelper("Arithmetic operation overflowed", (defaultData, _) => ({
+            ...defaultData,
+            gameType: 1,
+            num: 99n,
+        }));
+    });
+
+    it("Should fail with too too low number game type 2", async () => {
+        //@ todo: We get negativ profit for user => Do not allow bet 0
+        return testHelper("Arithmetic operation overflowed", (defaultData, _) => ({
+            ...defaultData,
+            gameType: 2,
+            num: 0n,
+        }));
+    });
+
+    it("too high number game type 2", async () => {
+        return testHelper("Invalid num", (defaultData, _) => ({...defaultData, gameType: 2, num: 99n}));
+    });
+
+    it("Should fail with too too low number game type 3", async () => {
+        return testHelper("Invalid num", (defaultData, _) => ({...defaultData, gameType: 3, num: 0n}));
+    });
+
+    it("Should fail with too high number game type 3", async () => {
+        return testHelper("Invalid num", (defaultData, _) => ({
+            ...defaultData,
+            gameType: 3,
+            num: BigInt(Math.pow(2, 12) - 1),
+        }));
+    });
+
+    it("Should fail with wrong user address", async () => {
+        return testHelper("inv sig", async (defaultData, gameFixtureData) => {
+            const {gameChannel, server, user2, stake} = gameFixtureData;
+            await createGame(gameChannel, server, user2, shash3, phash3, stake);
+            return {...defaultData, userAddress: user2};
+        });
+    });
+
+    it("Should fail with wrong game id", async () => {
+        return testHelper("inv gameId", async (defaultData, gameFixtureData) => {
+            const {gameChannel, server, user2, stake} = gameFixtureData;
+            await createGame(gameChannel, server, user2, shash3, phash3, stake);
+            return {...defaultData, gameId: 2};
+        });
+    });
+
+    it("Should succeed", async () => {
+        const {roundId, value, balance, serverHash, userHash, gameId, userSeed, serverSeed, gameType, num} =
+            defaultData;
+        const {gameChannel, server, user1: user} = await loadFixture(createGameFixture);
+
+        const userSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            Number(gameId),
+            gameChannel.address,
+            user,
         );
 
-        withData(
-            {
-                "wrong user address": {
-                    ...defaultData,
-                    userAddress: user2,
-                },
-                "wrong game id": {
-                    ...defaultData,
-                    gameId: 2,
-                },
-            },
-            (d: typeof defaultData) => {
-                it("Should fail", async () => {
-                    await createGame(gameChannel, server, user2, shash3, phash3, stake);
-                    const userSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        d.signer
-                    );
-
-                    return expect(
-                        gameChannel.serverEndGameConflict(
-                            d.roundId,
-                            d.gameType,
-                            d.num,
-                            d.value,
-                            d.balance,
-                            d.serverHash,
-                            d.userHash,
-                            d.gameId,
-                            userSig,
-                            d.userAddress,
-                            d.serverSeed,
-                            d.userSeed,
-                            {from: d.from}
-                        )
-                    ).to.be.rejectedWith(TRANSACTION_ERROR);
-                });
-            }
+        await gameChannel.write.serverEndGameConflict(
+            [roundId, gameType, num, value, balance, serverHash, userHash, gameId, userSig, user, serverSeed, userSeed],
+            {account: server},
         );
 
-        it("Should succeed", async () => {
-            const d = defaultData;
-
-            const userSig = await signData(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                d.contractAddress(),
-                d.signer
-            );
-
-            await gameChannel.serverEndGameConflict(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                userSig,
-                d.userAddress,
-                d.serverSeed,
-                d.userSeed,
-                {from: d.from}
-            );
-
-            await checkGameStateAsync(
-                gameChannel,
-                d.gameId,
-                GameStatus.SERVER_INITIATED_END,
-                ReasonEnded.REGULAR_ENDED,
-                GameType.DICE_LOWER,
-                d.roundId,
-                d.num,
-                d.value,
-                d.balance,
-                d.userSeed,
-                d.serverSeed
-            );
-        });
-
-        it("Should succeed after user called cancelActiveGame!", async () => {
-            const d = defaultData;
-
-            await gameChannel.userCancelActiveGame(d.gameId, {from: user});
-
-            const userSig = await signData(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                d.contractAddress(),
-                d.signer
-            );
-
-            await gameChannel.serverEndGameConflict(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                userSig,
-                d.userAddress,
-                d.serverSeed,
-                d.userSeed,
-                {from: d.from}
-            );
-
-            await checkGameStateAsync(
-                gameChannel,
-                d.gameId,
-                GameStatus.SERVER_INITIATED_END,
-                ReasonEnded.REGULAR_ENDED,
-                GameType.DICE_LOWER,
-                d.roundId,
-                d.num,
-                d.value,
-                d.balance,
-                d.userSeed,
-                d.serverSeed
-            );
-        });
-
-        it("Should succeed after user called conflict game with lower roundId!", async () => {
-            const d = defaultData;
-
-            const serverSig = await signData(
-                d.roundId - 1,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                shash3,
-                phash3,
-                d.gameId,
-                d.contractAddress(),
-                server
-            );
-
-            await gameChannel.userEndGameConflict(
-                d.roundId - 1,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                shash3,
-                phash3,
-                d.gameId,
-                serverSig,
-                phash2,
-                {from: user}
-            );
-
-            const userSig = await signData(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                d.contractAddress(),
-                d.signer
-            );
-
-            await gameChannel.serverEndGameConflict(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                userSig,
-                d.userAddress,
-                d.serverSeed,
-                d.userSeed,
-                {from: d.from}
-            );
-
-            await checkGameStateAsync(
-                gameChannel,
-                d.gameId,
-                GameStatus.SERVER_INITIATED_END,
-                ReasonEnded.REGULAR_ENDED,
-                GameType.DICE_LOWER,
-                d.roundId,
-                d.num,
-                d.value,
-                d.balance,
-                d.userSeed,
-                d.serverSeed
-            );
-        });
-
-        withData(
-            {
-                "game type 1 num 1": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 1,
-                },
-                "game type 2 num 1": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 1,
-                },
-                "game type 1 num 98": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 98,
-                },
-                "game type 2 num 98": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 98,
-                },
-                "game type 3 num 1": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: 1,
-                },
-                "game type 3 num 2^12 - 2": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: Math.pow(2, 12) - 2,
-                },
-                "game type 4 num 0": {
-                    ...defaultData,
-                    gameType: 4,
-                    num: 0,
-                },
-                "game type 4 num 1": {
-                    ...defaultData,
-                    gameType: 4,
-                    num: 1,
-                },
-                "game type 5 num 1": {
-                    ...defaultData,
-                    gameType: 5,
-                    num: 1,
-                },
-                "game type 5 num 1098437885952": {
-                    ...defaultData,
-                    gameType: 5,
-                    num: "1098437885952",
-                },
-                "game type 6 num 110": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 110,
-                },
-                "game type 6 num 320": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 320,
-                },
-            },
-            (d: typeof defaultData) => {
-                it("Should succeed after user called conflict game with same roundId!", async () => {
-                    const serverSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        server
-                    );
-
-                    await gameChannel.userEndGameConflict(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        serverSig,
-                        d.userSeed,
-                        {from: user}
-                    );
-
-                    const contractBalanceBefore = await getBalance(gameChannel.address);
-                    const houseProfitBefore = await gameChannel.houseProfit.call();
-                    const houseStakeBefore = await gameChannel.houseStake.call();
-
-                    const userSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        d.signer
-                    );
-
-                    await gameChannel.serverEndGameConflict(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        userSig,
-                        d.userAddress,
-                        d.serverSeed,
-                        d.userSeed,
-                        {from: d.from}
-                    );
-
-                    const contractBalanceAfter = await getBalance(gameChannel.address);
-                    const houseProfitAfter = await gameChannel.houseProfit.call();
-                    const houseStakeAfter = await gameChannel.houseStake.call();
-
-                    // check new balances (profit, stake, contract balance)
-                    const newBalance = max(
-                        new BN(
-                            fromGweiToWei(
-                                calcNewBalance(
-                                    d.gameType,
-                                    d.num,
-                                    fromWeiToGwei(d.value.toString()),
-                                    d.serverSeed,
-                                    d.userSeed,
-                                    fromWeiToGwei(d.balance.toString())
-                                )
-                            )
-                        ).sub(CONFLICT_END_FINE),
-                        stake.neg()
-                    );
-
-                    const payout = stake.add(newBalance);
-
-                    expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
-                    expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
-                    expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
-
-                    await checkGameStatusAsync(gameChannel, d.gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
-                });
-            }
+        await checkGameStateAsync(
+            gameChannel,
+            gameId,
+            GameStatus.SERVER_INITIATED_END,
+            ReasonEnded.REGULAR_ENDED,
+            GameType.DICE_LOWER,
+            roundId,
+            num,
+            value,
+            balance,
+            userSeed,
+            serverSeed,
         );
     });
 
-    describe("userEndConflict", () => {
-        const stake = MAX_STAKE;
+    it("Should succeed after user called cancelActiveGame!", async () => {
+        const {roundId, value, balance, serverHash, userHash, gameId, userSeed, serverSeed, gameType, num} =
+            defaultData;
+        const {gameChannel, server, user1: user} = await loadFixture(createGameFixture);
 
-        let contractAddress: string;
+        await gameChannel.write.userCancelActiveGame([gameId], {account: user});
 
-        beforeEach(async () => {
-            contractAddress = gameChannel.address;
-            await createGame(gameChannel, server, user, shash3, phash3, stake);
+        const userSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            Number(gameId),
+            gameChannel.address,
+            user,
+        );
+
+        await gameChannel.write.serverEndGameConflict(
+            [roundId, gameType, num, value, balance, serverHash, userHash, gameId, userSig, user, serverSeed, userSeed],
+            {account: server},
+        );
+
+        await checkGameStateAsync(
+            gameChannel,
+            gameId,
+            GameStatus.SERVER_INITIATED_END,
+            ReasonEnded.REGULAR_ENDED,
+            GameType.DICE_LOWER,
+            roundId,
+            num,
+            value,
+            balance,
+            userSeed,
+            serverSeed,
+        );
+    });
+
+    it("Should succeed after user called conflict game with lower roundId!", async () => {
+        const {roundId, value, balance, serverHash, userHash, gameId, userSeed, serverSeed, gameType, num} =
+            defaultData;
+        const {gameChannel, server, user1: user} = await loadFixture(createGameFixture);
+
+        const serverSig = await signData(
+            roundId - 1,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            shash3,
+            phash3,
+            Number(gameId),
+            gameChannel.address,
+            server,
+        );
+
+        await gameChannel.write.userEndGameConflict(
+            [roundId - 1, gameType, num, value, balance, shash3, phash3, gameId, serverSig, phash2],
+            {account: user},
+        );
+
+        const userSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            Number(gameId),
+            gameChannel.address,
+            user,
+        );
+
+        await gameChannel.write.serverEndGameConflict(
+            [roundId, gameType, num, value, balance, serverHash, userHash, gameId, userSig, user, serverSeed, userSeed],
+            {account: server},
+        );
+
+        await checkGameStateAsync(
+            gameChannel,
+            gameId,
+            GameStatus.SERVER_INITIATED_END,
+            ReasonEnded.REGULAR_ENDED,
+            GameType.DICE_LOWER,
+            roundId,
+            num,
+            value,
+            balance,
+            userSeed,
+            serverSeed,
+        );
+    });
+
+    ValidGameTypes.forEach(({gameType, num}) => {
+        it(`Should succeed after user called conflict game with gameType ${gameType} with num ${num}`, async () => {
+            const {roundId, value, balance, serverHash, userHash, gameId, userSeed, serverSeed, gameType, num} =
+                defaultData;
+            const {gameChannel, server, user1: user, stake} = await loadFixture(createGameFixture);
+
+            const serverSig = await signData(
+                roundId,
+                gameType,
+                Number(num),
+                value,
+                balance,
+                serverHash,
+                userHash,
+                Number(gameId),
+                gameChannel.address,
+                server,
+            );
+
+            await gameChannel.write.userEndGameConflict(
+                [roundId, gameType, num, value, balance, serverHash, userHash, gameId, serverSig, userSeed],
+                {account: user},
+            );
+
+            const contractBalanceBefore = await getBalance(gameChannel.address);
+            const houseProfitBefore = await gameChannel.read.houseProfit();
+            const houseStakeBefore = await gameChannel.read.houseStake();
+
+            const userSig = await signData(
+                roundId,
+                gameType,
+                Number(num),
+                value,
+                balance,
+                serverHash,
+                userHash,
+                Number(gameId),
+                gameChannel.address,
+                user,
+            );
+
+            await gameChannel.write.serverEndGameConflict(
+                [
+                    roundId,
+                    gameType,
+                    num,
+                    value,
+                    balance,
+                    serverHash,
+                    userHash,
+                    gameId,
+                    userSig,
+                    user,
+                    serverSeed,
+                    userSeed,
+                ],
+                {account: server},
+            );
+
+            const contractBalanceAfter = await getBalance(gameChannel.address);
+            const houseProfitAfter = await gameChannel.read.houseProfit();
+            const houseStakeAfter = await gameChannel.read.houseStake();
+
+            // check new balances (profit, stake, contract balance)
+            const newBalance = maxBigInt(
+                BigInt(
+                    fromGweiToWei(
+                        calcNewBalance(
+                            gameType,
+                            Number(num),
+                            fromWeiToGwei(value.toString()),
+                            serverSeed,
+                            userSeed,
+                            fromWeiToGwei(balance.toString()),
+                        ),
+                    ),
+                ) - CONFLICT_END_FINE,
+                -stake,
+            );
+
+            const payout = stake + newBalance;
+
+            expect(contractBalanceAfter).to.eq(contractBalanceBefore - payout);
+            expect(houseProfitAfter).to.eq(houseProfitBefore - newBalance);
+            expect(houseStakeAfter).to.eq(houseStakeBefore - newBalance);
+
+            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
         });
+    });
+});
 
-        const defaultData = {
+describe("userEndConflict", () => {
+    interface DefaultData {
+        roundId: number;
+        gameType: number;
+        num: bigint;
+        value: bigint;
+        balance: bigint;
+        serverHash: Hex;
+        userHash: Hex;
+        gameId: number;
+        contractAddress: Address;
+        userAddress: Address;
+        serverSeed: Hex;
+        userSeed: Hex;
+        signer: Address;
+        from: Address;
+    }
+
+    const userEndConfigFailTest = async (
+        error: string,
+        gameChannel: ContractTypesMap["GameChannel"],
+        d: DefaultData,
+    ) => {
+        const {
+            roundId,
+            value,
+            balance,
+            serverHash,
+            userHash,
+            gameId,
+            userSeed,
+            gameType,
+            contractAddress,
+            num,
+            signer,
+            from,
+        } = d;
+        const serverSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            gameId,
+            contractAddress,
+            signer,
+        );
+
+        await expect(
+            gameChannel.write.userEndGameConflict(
+                [
+                    roundId,
+                    gameType,
+                    BigInt(num),
+                    value,
+                    balance,
+                    serverHash,
+                    userHash,
+                    BigInt(gameId),
+                    serverSig,
+                    userSeed,
+                ],
+                {account: from},
+            ),
+        ).to.be.rejectedWith(error);
+    };
+
+    async function testHelper(
+        error: string,
+        dataGen: (
+            testData: DefaultData,
+            gameFixtureData: CreateGameFixtureReturn,
+        ) => Promise<DefaultData> | DefaultData,
+    ) {
+        const gameFixtureData = await loadFixture(createGameFixture);
+        const {user1: user, server, gameChannel} = gameFixtureData;
+
+        const defaultData: DefaultData = {
             roundId: 10,
             gameType: 1,
-            num: 80,
+            num: 80n,
             value: BET_VALUE,
-            balance: MAX_BALANCE.divn(2),
+            balance: MAX_BALANCE / 2n,
             serverHash: shash2,
             userHash: phash2,
             gameId: 1,
-            contractAddress: () => contractAddress,
-            userSeed: phash1,
+            contractAddress: gameChannel.address,
+            userAddress: user,
             serverSeed: shash1,
+            userSeed: phash1,
             signer: server,
             from: user,
         };
 
-        withData(
-            {
-                "wrong user": {
-                    ...defaultData,
-                    from: user2,
-                },
-                "wrong round Id": {
-                    ...defaultData,
-                    roundId: 0,
-                },
-                "wrong sig": {
-                    ...defaultData,
-                    signer: user2,
-                },
-                "wrong user seed": {
-                    ...defaultData,
-                    userSeed: phash2,
-                },
-                "wrong game type": {
-                    ...defaultData,
-                    gameType: 0,
-                },
-                "too low number game type 1": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 0,
-                },
-                "too high number game type 1": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 99,
-                },
-                "too low number game type 2": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 0,
-                },
-                "too high number game type 2": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 99,
-                },
-                "too low number game type 3": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: 0,
-                },
-                "too high number game type 3": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: Math.pow(2, 12) - 1,
-                },
-                "game type 4 num 1": {
-                    ...defaultData,
-                    gameType: 4,
-                    num: 2,
-                },
-                "game type 5 num 0": {
-                    ...defaultData,
-                    gameType: 5,
-                    num: 0,
-                },
-                "game type 5 num 1098437885953": {
-                    ...defaultData,
-                    gameType: 5,
-                    num: "1098437885953",
-                },
-                "game type 6 num 410": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 410,
-                },
-                "game type 6 num 130": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 130,
-                },
-                "game type 7 num 408": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 408,
-                },
-                "game type 7 num 117": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 117,
-                },
-                "too low balance": {
-                    ...defaultData,
-                    balance: stake.neg().addn(1),
-                },
-                "too high balance": {
-                    ...defaultData,
-                    balance: MAX_BALANCE.addn(1),
-                },
-                "wrong contract address": {
-                    ...defaultData,
-                    contractAddress: () => accounts[4],
-                },
-            },
-            (d: typeof defaultData) => {
-                it("Should fail", async () => {
-                    const serverSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        d.signer
-                    );
+        return await userEndConfigFailTest(error, gameChannel, await dataGen(defaultData, gameFixtureData));
+    }
 
-                    return expect(
-                        gameChannel.userEndGameConflict(
-                            d.roundId,
-                            d.gameType,
-                            d.num,
-                            d.value,
-                            d.balance,
-                            d.serverHash,
-                            d.userHash,
-                            d.gameId,
-                            serverSig,
-                            d.userSeed,
-                            {from: d.from}
-                        )
-                    ).to.be.rejectedWith(TRANSACTION_ERROR);
-                });
-            }
+    it("Should fail wrong round Id", async () => {
+        return testHelper("inv roundId", (defaultData, _) => ({...defaultData, roundId: 0}));
+    });
+
+    it("Should fail wrong sig", async () => {
+        return testHelper("inv sig", (defaultData, {user2}) => ({...defaultData, signer: user2}));
+    });
+
+    it("Should fail wrong user seed", async () => {
+        return testHelper("inv userSeed", (defaultData, _) => ({...defaultData, userSeed: phash2}));
+    });
+
+    it("Should fail wrong game type", async () => {
+        //@todo: change to inv gameType
+        return testHelper("Invalid game type", (defaultData, _) => ({...defaultData, gameType: 0}));
+    });
+
+    it("Should fail too low balance", async () => {
+        return testHelper("inv balance", (defaultData, {stake}) => ({...defaultData, balance: -stake - BigInt(1e9)}));
+    });
+
+    it("Should fail too high balance", async () => {
+        return testHelper("inv balance", (defaultData, _) => ({...defaultData, balance: MAX_BALANCE + BigInt(1e9)}));
+    });
+
+    it("Should fail wrong contract address", async () => {
+        return testHelper("inv sig", (defaultData, {other}) => ({...defaultData, contractAddress: other}));
+    });
+
+    it("Should fail with wrong user address", async () => {
+        return testHelper("inv gameId", async (defaultData, gameFixtureData) => {
+            const {gameChannel, server, user2, stake} = gameFixtureData;
+            await createGame(gameChannel, server, user2, shash3, phash3, stake);
+            return {...defaultData, from: user2};
+        });
+    });
+
+    it("Should fail with wrong game id", async () => {
+        return testHelper("inv gameId", async (defaultData, gameFixtureData) => {
+            const {gameChannel, server, user2, stake} = gameFixtureData;
+            await createGame(gameChannel, server, user2, shash3, phash3, stake);
+            return {...defaultData, gameId: 2};
+        });
+    });
+
+    InvalidGameTypes.forEach(({gameType, num}) => {
+        it(`Should fail with gameType ${gameType} with num ${num}`, async () =>
+            testHelper(
+                "Invalid num", //@todo: change to inv num
+                (defaultData, _) => ({...defaultData, gameType, num}),
+            ));
+    });
+
+    const defaultData = {
+        roundId: 10,
+        gameType: 1,
+        num: 80n,
+        value: BET_VALUE,
+        balance: MAX_BALANCE / 2n,
+        serverHash: shash2,
+        userHash: phash2,
+        gameId: 1n,
+        userSeed: phash1,
+        serverSeed: shash1,
+    };
+
+    it("Should succeed after server called cancelActiveGame!", async () => {
+        const {roundId, value, balance, serverHash, userHash, gameId, userSeed, gameType, num} = defaultData;
+        const {gameChannel, server, user1: user} = await loadFixture(createGameFixture);
+
+        await gameChannel.write.serverCancelActiveGame([user, gameId], {account: server});
+
+        const serverSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            Number(gameId),
+            gameChannel.address,
+            server,
         );
 
-        it("Should succeed after server called cancelActiveGame!", async () => {
-            const d = defaultData;
+        await gameChannel.write.userEndGameConflict(
+            [roundId, gameType, num, value, balance, serverHash, userHash, gameId, serverSig, userSeed],
+            {account: user},
+        );
 
-            await gameChannel.serverCancelActiveGame(user, d.gameId, {from: server});
+        await checkGameStateAsync(
+            gameChannel,
+            gameId,
+            GameStatus.USER_INITIATED_END,
+            ReasonEnded.REGULAR_ENDED,
+            GameType.DICE_LOWER,
+            roundId,
+            num,
+            value,
+            balance,
+            userSeed,
+            ZERO_SEED,
+        );
+    });
 
-            const serverSig = await signData(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                d.contractAddress(),
-                d.signer
-            );
+    it("Should succeed after server called conflict game with lower roundId!", async () => {
+        const {roundId, value, balance, serverHash, userHash, gameId, userSeed, gameType, num} = defaultData;
+        const {gameChannel, server, user1: user} = await loadFixture(createGameFixture);
 
-            await gameChannel.userEndGameConflict(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                serverSig,
-                d.userSeed,
-                {from: d.from}
-            );
+        const userSig = await signData(
+            roundId - 1,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            shash3,
+            phash3,
+            Number(gameId),
+            gameChannel.address,
+            user,
+        );
 
-            await checkGameStateAsync(
-                gameChannel,
-                d.gameId,
-                GameStatus.USER_INITIATED_END,
-                ReasonEnded.REGULAR_ENDED,
-                GameType.DICE_LOWER,
-                d.roundId,
-                d.num,
-                d.value,
-                d.balance,
-                d.userSeed,
-                ZERO_SEED
-            );
-        });
+        await gameChannel.write.serverEndGameConflict(
+            [roundId - 1, gameType, num, value, balance, shash3, phash3, gameId, userSig, user, shash2, phash2],
+            {account: server},
+        );
 
-        it("Should succeed after server called conflict game with lower roundId!", async () => {
-            const d = defaultData;
+        const serverSig = await signData(
+            roundId,
+            gameType,
+            Number(num),
+            value,
+            balance,
+            serverHash,
+            userHash,
+            Number(gameId),
+            gameChannel.address,
+            server,
+        );
+
+        await gameChannel.write.userEndGameConflict(
+            [roundId, gameType, num, value, balance, serverHash, userHash, gameId, serverSig, userSeed],
+            {account: user},
+        );
+
+        await checkGameStateAsync(
+            gameChannel,
+            gameId,
+            GameStatus.USER_INITIATED_END,
+            ReasonEnded.REGULAR_ENDED,
+            GameType.DICE_LOWER,
+            roundId,
+            num,
+            value,
+            balance,
+            userSeed,
+            ZERO_SEED,
+        );
+    });
+
+    ValidGameTypes.forEach(({gameType, num}) => {
+        it(`Should succeed after user called conflict game with same roundId with gameType ${gameType} with num ${num}!`, async () => {
+            const {gameChannel, server, user1: user, stake} = await loadFixture(createGameFixture);
+            const {roundId, value, balance, serverHash, userHash, gameId, serverSeed, userSeed} = defaultData;
 
             const userSig = await signData(
-                d.roundId - 1,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                shash3,
-                phash3,
-                d.gameId,
-                d.contractAddress(),
-                user
+                roundId,
+                gameType,
+                Number(num),
+                value,
+                balance,
+                serverHash,
+                userHash,
+                Number(gameId),
+                gameChannel.address,
+                user,
             );
 
-            await gameChannel.serverEndGameConflict(
-                d.roundId - 1,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                shash3,
-                phash3,
-                d.gameId,
-                userSig,
-                user,
-                shash2,
-                phash2,
-                {from: server}
+            await gameChannel.write.serverEndGameConflict(
+                [
+                    roundId,
+                    gameType,
+                    num,
+                    value,
+                    balance,
+                    serverHash,
+                    userHash,
+                    gameId,
+                    userSig,
+                    user,
+                    serverSeed,
+                    userSeed,
+                ],
+                {account: server},
             );
 
             const serverSig = await signData(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                d.contractAddress(),
-                d.signer
+                roundId,
+                gameType,
+                Number(num),
+                value,
+                balance,
+                serverHash,
+                userHash,
+                Number(gameId),
+                gameChannel.address,
+                server,
             );
 
-            await gameChannel.userEndGameConflict(
-                d.roundId,
-                d.gameType,
-                d.num,
-                d.value,
-                d.balance,
-                d.serverHash,
-                d.userHash,
-                d.gameId,
-                serverSig,
-                d.userSeed,
-                {from: d.from}
+            const contractBalanceBefore = await getBalance(gameChannel.address);
+            const houseProfitBefore = await gameChannel.read.houseProfit();
+            const houseStakeBefore = await gameChannel.read.houseStake();
+
+            await gameChannel.write.userEndGameConflict(
+                [roundId, gameType, num, value, balance, serverHash, userHash, gameId, serverSig, userSeed],
+                {account: user},
             );
 
-            await checkGameStateAsync(
-                gameChannel,
-                d.gameId,
-                GameStatus.USER_INITIATED_END,
-                ReasonEnded.REGULAR_ENDED,
-                GameType.DICE_LOWER,
-                d.roundId,
-                d.num,
-                d.value,
-                d.balance,
-                d.userSeed,
-                ZERO_SEED
+            const contractBalanceAfter = await getBalance(gameChannel.address);
+            const houseProfitAfter = await gameChannel.read.houseProfit();
+            const houseStakeAfter = await gameChannel.read.houseStake();
+
+            // check new balances (profit, stake, contract balance)
+            const newBalance = maxBigInt(
+                BigInt(
+                    fromGweiToWei(
+                        calcNewBalance(
+                            gameType,
+                            Number(num),
+                            fromWeiToGwei(value.toString()),
+                            serverSeed,
+                            userSeed,
+                            fromWeiToGwei(balance.toString()),
+                        ),
+                    ),
+                ) - CONFLICT_END_FINE,
+                -stake,
             );
+            const payout = stake + newBalance;
+
+            expect(contractBalanceAfter).to.eq(contractBalanceBefore - payout);
+            expect(houseProfitAfter).to.eq(houseProfitBefore - newBalance);
+            expect(houseStakeAfter).to.eq(houseStakeBefore - newBalance);
+
+            await checkGameStatusAsync(gameChannel, gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
         });
-
-        withData(
-            {
-                "game type 1 num 1": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 1,
-                },
-                "game type 2 num 1": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 1,
-                },
-                "game type 1 num 98": {
-                    ...defaultData,
-                    gameType: 1,
-                    num: 98,
-                },
-                "game type 2 num 98": {
-                    ...defaultData,
-                    gameType: 2,
-                    num: 98,
-                },
-                "game type 3 num 1": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: 1,
-                },
-                "game type 3 num 2^12 - 2": {
-                    ...defaultData,
-                    gameType: 3,
-                    num: Math.pow(2, 12) - 2,
-                },
-                "game type 4 num 0": {
-                    ...defaultData,
-                    gameType: 4,
-                    num: 0,
-                },
-                "game type 4 num 1": {
-                    ...defaultData,
-                    gameType: 4,
-                    num: 1,
-                },
-                "game type 5 num 1": {
-                    ...defaultData,
-                    gameType: 5,
-                    num: 1,
-                },
-                "game type 5 num 1098437885952": {
-                    ...defaultData,
-                    gameType: 5,
-                    num: "1098437885952",
-                },
-                "game type 6 num 110": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 110,
-                },
-                "game type 6 num 320": {
-                    ...defaultData,
-                    gameType: 6,
-                    num: 320,
-                },
-                "game type 7 num 108": {
-                    ...defaultData,
-                    gameType: 7,
-                    num: 108,
-                },
-                "game type 7 num 316": {
-                    ...defaultData,
-                    gameType: 7,
-                    num: 316,
-                },
-            },
-            (d: typeof defaultData) => {
-                it("Should succeed after user called conflict game with same roundId!", async () => {
-                    const userSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        user
-                    );
-
-                    await gameChannel.serverEndGameConflict(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        userSig,
-                        user,
-                        d.serverSeed,
-                        d.userSeed,
-                        {from: server}
-                    );
-
-                    const serverSig = await signData(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        d.contractAddress(),
-                        d.signer
-                    );
-
-                    const contractBalanceBefore = await getBalance(gameChannel.address);
-                    const houseProfitBefore = await gameChannel.houseProfit.call();
-                    const houseStakeBefore = await gameChannel.houseStake.call();
-
-                    await gameChannel.userEndGameConflict(
-                        d.roundId,
-                        d.gameType,
-                        d.num,
-                        d.value,
-                        d.balance,
-                        d.serverHash,
-                        d.userHash,
-                        d.gameId,
-                        serverSig,
-                        d.userSeed,
-                        {from: d.from}
-                    );
-
-                    const contractBalanceAfter = await getBalance(gameChannel.address);
-                    const houseProfitAfter = await gameChannel.houseProfit.call();
-                    const houseStakeAfter = await gameChannel.houseStake.call();
-
-                    // check new balances (profit, stake, contract balance)
-                    const newBalance = max(
-                        new BN(
-                            fromGweiToWei(
-                                calcNewBalance(
-                                    d.gameType,
-                                    d.num,
-                                    fromWeiToGwei(d.value.toString()),
-                                    d.serverSeed,
-                                    d.userSeed,
-                                    fromWeiToGwei(d.balance.toString())
-                                )
-                            )
-                        ).sub(CONFLICT_END_FINE),
-                        stake.neg()
-                    );
-                    const payout = stake.add(newBalance);
-
-                    expect(contractBalanceAfter).to.eq.BN(contractBalanceBefore.sub(payout));
-                    expect(houseProfitAfter).to.eq.BN(houseProfitBefore.sub(newBalance));
-                    expect(houseStakeAfter).to.eq.BN(houseStakeBefore.sub(newBalance));
-
-                    await checkGameStatusAsync(gameChannel, d.gameId, GameStatus.ENDED, ReasonEnded.REGULAR_ENDED);
-                });
-            }
-        );
     });
 });

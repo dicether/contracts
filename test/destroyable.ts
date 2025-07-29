@@ -1,70 +1,62 @@
-const GameChannel = artifacts.require("./GameChannel.sol");
-import * as chai from "chai";
+//const GameChannel = artifacts.require("./gameChannel.write.sol");
+import {time, loadFixture, reset} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import {expect} from "chai";
 
-import BlockchainLifecycle from "./utils/BlockchainLifecycle";
-import {configureChai, getBalance, getTransactionCost, increaseTimeAsync, TRANSACTION_ERROR} from "./utils/util";
-
-configureChai();
-const expect = chai.expect;
+import {gameChannelFixture} from "./gameChannelFixture";
+import {getBalance, getTransactionCost} from "./utils/util";
 
 const DestroyTimeout = 20 * 24 * 60 * 60;
 
-contract("Destroyable", (accounts) => {
-    const owner = accounts[0];
-    const notOwner = accounts[1];
+export const TRANSACTION_ERROR = "Transaction reverted without a reason";
 
-    const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
-    let gameChannel: any;
-
-    before(async () => {
-        gameChannel = await GameChannel.deployed();
+describe("destroy", () => {
+    before(async function () {
+        await reset();
     });
 
-    beforeEach(async () => {
-        await blockchainLifecycle.takeSnapshotAsync();
+    it("Should fail if owner calls not paused", async () => {
+        const {gameChannel, owner} = await loadFixture(gameChannelFixture);
+
+        await gameChannel.write.activate({account: owner});
+        await gameChannel.write.unpause({account: owner});
+        await expect(gameChannel.write.destroy({account: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
     });
 
-    afterEach(async () => {
-        await blockchainLifecycle.revertSnapShotAsync();
+    it("Should fail if owner calls paused with wrong timeout", async () => {
+        const {gameChannel, owner} = await loadFixture(gameChannelFixture);
+
+        await gameChannel.write.activate({account: owner});
+        await gameChannel.write.unpause({account: owner});
+        await gameChannel.write.pause({account: owner});
+        await expect(gameChannel.write.destroy({account: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
     });
 
-    describe("destroy", () => {
-        it("Should fail if owner calls not paused", async () => {
-            await gameChannel.activate({from: owner});
-            await gameChannel.unpause({from: owner});
-            return expect(gameChannel.destroy({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
+    it("Should fail if non owner calls with correct timeout", async () => {
+        const {gameChannel, owner, other} = await loadFixture(gameChannelFixture);
 
-        it("Should fail if owner calls paused with wrong timeout", async () => {
-            await gameChannel.activate({from: owner});
-            await gameChannel.unpause({from: owner});
-            await gameChannel.pause({from: owner});
-            return expect(gameChannel.destroy({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
+        await gameChannel.write.activate({account: owner});
+        await gameChannel.write.unpause({account: owner});
+        await gameChannel.write.pause({account: owner});
+        await time.increase(DestroyTimeout);
+        await expect(gameChannel.write.destroy({account: other})).to.be.rejectedWith(TRANSACTION_ERROR);
+    });
 
-        it("Should fail if non owner calls with correct timeout", async () => {
-            await gameChannel.activate({from: owner});
-            await gameChannel.unpause({from: owner});
-            await gameChannel.pause({from: owner});
-            await increaseTimeAsync(DestroyTimeout);
-            return expect(gameChannel.destroy({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
-        });
+    it("Should succeed if owner call with correct timeout", async () => {
+        const {gameChannel, owner} = await loadFixture(gameChannelFixture);
 
-        it("Should succeed of owner call with correct timeout", async () => {
-            await gameChannel.activate({from: owner});
-            await gameChannel.unpause({from: owner});
-            await gameChannel.pause({from: owner});
-            await increaseTimeAsync(DestroyTimeout);
+        await gameChannel.write.activate({account: owner});
+        await gameChannel.write.unpause({account: owner});
+        await gameChannel.write.pause({account: owner});
+        await time.increase(DestroyTimeout);
 
-            const contractBalance = await getBalance(gameChannel.address);
-            const oldBalance = await getBalance(owner);
+        const contractBalance = await getBalance(gameChannel.address);
+        const oldBalance = await getBalance(owner);
 
-            const res = await gameChannel.destroy({from: owner});
+        const res = await gameChannel.write.destroy({account: owner});
 
-            const newBalance = await getBalance(owner);
-            const transactionCost = await getTransactionCost(res.receipt);
+        const newBalance = await getBalance(owner);
+        const transactionCost = await getTransactionCost(res);
 
-            expect(newBalance).to.eq.BN(oldBalance.add(contractBalance).sub(transactionCost));
-        });
+        expect(newBalance).to.eq(oldBalance + contractBalance - transactionCost);
     });
 });

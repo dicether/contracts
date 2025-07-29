@@ -1,8 +1,10 @@
-const GameChannel = artifacts.require("./GameChannel.sol");
-import BN from "bn.js";
-import * as chai from "chai";
+import {loadFixture, time} from "@nomicfoundation/hardhat-network-helpers";
+import {expect} from "chai";
+import hre from "hardhat";
+import {ContractTypesMap} from "hardhat/types";
+import {Address, decodeEventLog} from "viem";
 
-import BlockchainLifecycle from "./utils/BlockchainLifecycle";
+import {enableGameChannelFixture, gameChannelFixture} from "./gameChannelFixture";
 import {
     INITIAL_HOUSE_STAKE,
     MAX_STAKE,
@@ -13,34 +15,48 @@ import {
     WITHDRAW_ALL_TIMEOUT,
 } from "./utils/config";
 import {signData} from "./utils/signUtil";
-import {
-    configureChai,
-    createGame,
-    getBalance,
-    getTransactionCost,
-    increaseTimeAsync,
-    TRANSACTION_ERROR,
-} from "./utils/util";
-
-configureChai();
-const expect = chai.expect;
+import {createGame, getBalance, getTransactionCost} from "./utils/util";
 
 const hash = "0x0000000000000000000000000000000000000000000000000000000000000001";
+const REVERT_WITHOUT_REASON = "Transaction reverted without a reason";
 
 const PROFIT = MIN_STAKE;
 
-const createProfitAsync = async (gameChannel: any, user: string, server: string, profit: BN, createBefore?: number) => {
+const createProfitAsync = async (
+    gameChannel: ContractTypesMap["GameChannel"],
+    user: Address,
+    server: Address,
+    profit: bigint,
+    createBefore?: bigint,
+) => {
     const contractAddress = gameChannel.address;
     const gameType = 0;
     const num = 0;
-    const value = new BN(0);
+    const value = 0n;
     const serverHash = hash;
     const userHash = hash;
     const roundId = 10;
-    const balance = profit.neg();
+    const balance = -profit;
 
-    const result = await createGame(gameChannel, server, user, hash, hash, profit.abs(), createBefore);
-    const gameId = result.logs[0].args.gameId.toNumber();
+    const transactionHash = await createGame(
+        gameChannel,
+        server,
+        user,
+        hash,
+        hash,
+        profit < 0n ? -profit : profit,
+        createBefore,
+    );
+    const client = await hre.viem.getPublicClient();
+    const receipt = await client.getTransactionReceipt({hash: transactionHash});
+
+    const decoded = decodeEventLog({
+        abi: gameChannel.abi,
+        eventName: "LogGameCreated",
+        data: receipt.logs[0].data,
+        topics: receipt.logs[0].topics,
+    });
+    const gameId = decoded.args.gameId;
 
     const sig = await signData(
         roundId,
@@ -50,269 +66,281 @@ const createProfitAsync = async (gameChannel: any, user: string, server: string,
         balance,
         serverHash,
         userHash,
-        gameId,
+        Number(gameId),
         contractAddress,
-        user
+        user,
     );
 
-    await gameChannel.serverEndGame(roundId, balance, serverHash, userHash, gameId, contractAddress, user, sig, {
-        from: server,
-    });
+    await gameChannel.write.serverEndGame(
+        [roundId, balance, serverHash, userHash, gameId, contractAddress, user, sig],
+        {
+            account: server,
+        },
+    );
 };
 
-contract("GameChannelBase", (accounts) => {
-    const owner = accounts[0];
-    const server = accounts[1];
-    const user = accounts[2];
-    const notOwner = accounts[3];
-
-    const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
-
-    let gameChannel: any;
-
+describe("GameChannelBase", () => {
     before(async () => {
-        gameChannel = await GameChannel.deployed();
-        await gameChannel.addHouseStake({from: owner, value: INITIAL_HOUSE_STAKE});
-    });
-
-    beforeEach(async () => {
-        await blockchainLifecycle.takeSnapshotAsync();
-    });
-
-    afterEach(async () => {
-        await blockchainLifecycle.revertSnapShotAsync();
+        await hre.network.provider.send("hardhat_reset");
     });
 
     describe("setGameIdCntr", () => {
         it("Should fail if not called by owner", async () => {
-            return expect(gameChannel.setGameIdCntr(10, {from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
+            const {gameChannel, other} = await loadFixture(gameChannelFixture);
+            await expect(gameChannel.write.setGameIdCntr([10n], {account: other})).to.be.rejectedWith(
+                REVERT_WITHOUT_REASON,
+            );
         });
 
         it("Should fail if activated", async () => {
-            await gameChannel.activate({from: owner});
-            return expect(gameChannel.setGameIdCntr(10, {from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
+            const {gameChannel, owner} = await loadFixture(gameChannelFixture);
+            await gameChannel.write.activate({account: owner});
+            await expect(gameChannel.write.setGameIdCntr([10n], {account: owner})).to.be.rejectedWith(
+                REVERT_WITHOUT_REASON,
+            );
         });
 
         it("Should succeed", async () => {
-            await gameChannel.setGameIdCntr(10, {from: owner});
-            expect(await gameChannel.gameIdCntr.call()).to.eq.BN(10);
+            const {gameChannel, owner} = await loadFixture(gameChannelFixture);
+            await gameChannel.write.setGameIdCntr([10n], {account: owner});
+            expect(await gameChannel.read.gameIdCntr()).to.eq(10n);
         });
     });
 
     describe("activated contract tests", () => {
-        before(async () => {
-            await gameChannel.activate({from: owner});
-            await gameChannel.unpause({from: owner});
-        });
-
         describe("transferProfitToHouse", () => {
             it("Should fail if wrong timeout 1!", async () => {
+                const {gameChannel, other2: user, server, other} = await loadFixture(enableGameChannelFixture);
                 await createProfitAsync(gameChannel, user, server, PROFIT);
 
-                return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
+                await expect(gameChannel.write.transferProfitToHouse({account: other})).to.be.rejectedWith(
+                    REVERT_WITHOUT_REASON,
                 );
             });
 
             it("Should fail if wrong timeout 2!", async () => {
+                const {gameChannel, other2: user, server, other} = await loadFixture(enableGameChannelFixture);
                 await createProfitAsync(gameChannel, user, server, PROFIT);
 
-                await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
-                await gameChannel.transferProfitToHouse({from: notOwner});
+                await time.increase(PROFIT_TRANSFER_TIMESPAN);
+                await gameChannel.write.transferProfitToHouse({account: other});
 
                 await createProfitAsync(
                     gameChannel,
                     user,
                     server,
                     PROFIT,
-                    PROFIT_TRANSFER_TIMESPAN + Math.floor(Date.now() / 1000) + 120 * 60
+                    BigInt(PROFIT_TRANSFER_TIMESPAN + Math.floor(Date.now() / 1000) + 120 * 60),
                 );
-                return expect(gameChannel.transferProfitToHouse({from: notOwner})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
+                await expect(gameChannel.write.transferProfitToHouse({account: other})).to.be.rejectedWith(
+                    REVERT_WITHOUT_REASON,
                 );
             });
 
             it("Should transfer nothing if negative profit", async () => {
-                await createProfitAsync(gameChannel, user, server, PROFIT.neg());
-                await increaseTimeAsync(PROFIT_TRANSFER_TIMESPAN);
+                const {gameChannel, other2: user, server, other} = await loadFixture(enableGameChannelFixture);
+                await createProfitAsync(gameChannel, user, server, -PROFIT);
+                await time.increase(PROFIT_TRANSFER_TIMESPAN);
 
-                const houseAddress = await gameChannel.houseAddress.call();
+                const houseAddress = await gameChannel.read.houseAddress();
 
                 const prevBalance = await getBalance(houseAddress);
-                await gameChannel.transferProfitToHouse({from: notOwner});
+                await gameChannel.write.transferProfitToHouse({account: other});
                 const newBalance = await getBalance(houseAddress);
 
-                expect(newBalance).to.eq.BN(prevBalance);
+                expect(newBalance).to.eq(prevBalance);
             });
 
             it("Should succeed!", async () => {
+                const {gameChannel, other2: user, server, other} = await loadFixture(enableGameChannelFixture);
                 const profit = PROFIT;
                 const timeSpan = PROFIT_TRANSFER_TIMESPAN;
 
                 await createProfitAsync(gameChannel, user, server, profit);
 
-                const houseAddress = await gameChannel.houseAddress.call();
+                const houseAddress = await gameChannel.read.houseAddress();
                 const prevBalance = await getBalance(houseAddress);
 
-                await increaseTimeAsync(timeSpan); // 30days
-                await gameChannel.transferProfitToHouse({from: notOwner});
+                await time.increase(timeSpan); // 30days
+                await gameChannel.write.transferProfitToHouse({account: other});
 
                 const newBalance = await getBalance(houseAddress);
-                expect(newBalance).to.eq.BN(prevBalance.add(profit));
+                expect(newBalance).to.eq(prevBalance + profit);
 
-                const newProfit = await gameChannel.houseProfit.call();
-                expect(newProfit).to.eq.BN(0);
+                const newProfit = await gameChannel.read.houseProfit();
+                expect(newProfit).to.eq(0n);
             });
         });
 
         describe("setProfitTransferTimespan", () => {
-            const newTimeSpan = (PROFIT_TRANSFER_TIMESPAN_MAX + PROFIT_TRANSFER_TIMESPAN_MIN) / 2;
+            const newTimeSpan = BigInt((PROFIT_TRANSFER_TIMESPAN_MAX + PROFIT_TRANSFER_TIMESPAN_MIN) / 2);
 
             it("Should fail if not owner", async () => {
-                return expect(gameChannel.setProfitTransferTimeSpan(newTimeSpan, {from: notOwner})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
-                );
+                const {gameChannel, other} = await loadFixture(enableGameChannelFixture);
+                await expect(
+                    gameChannel.write.setProfitTransferTimeSpan([newTimeSpan], {account: other}),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should fail if too low time span", async () => {
-                return expect(
-                    gameChannel.setProfitTransferTimeSpan(PROFIT_TRANSFER_TIMESPAN_MIN - 1, {from: notOwner})
-                ).to.be.rejectedWith(TRANSACTION_ERROR);
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                await expect(
+                    gameChannel.write.setProfitTransferTimeSpan([BigInt(PROFIT_TRANSFER_TIMESPAN_MIN - 1)], {
+                        account: owner,
+                    }),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should fail if too high time span", async () => {
-                return expect(
-                    gameChannel.setProfitTransferTimeSpan(PROFIT_TRANSFER_TIMESPAN_MAX + 1, {from: notOwner})
-                ).to.be.rejectedWith(TRANSACTION_ERROR);
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                await expect(
+                    gameChannel.write.setProfitTransferTimeSpan([BigInt(PROFIT_TRANSFER_TIMESPAN_MAX + 1)], {
+                        account: owner,
+                    }),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should succeed!", async () => {
-                await gameChannel.setProfitTransferTimeSpan(newTimeSpan, {from: owner});
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                await gameChannel.write.setProfitTransferTimeSpan([newTimeSpan], {account: owner});
 
-                const newTimeSpanSet = await gameChannel.profitTransferTimeSpan.call();
-                expect(newTimeSpanSet).to.eq.BN(newTimeSpan);
+                const newTimeSpanSet = await gameChannel.read.profitTransferTimeSpan();
+                expect(newTimeSpanSet).to.eq(newTimeSpan);
             });
         });
 
-        describe("withdrawHouseStake", async () => {
+        describe("withdrawHouseStake", () => {
             it("Should fail if not owner", async () => {
-                return expect(
-                    gameChannel.withdrawHouseStake(new BN((1e18).toString()), {from: notOwner})
-                ).to.be.rejectedWith(TRANSACTION_ERROR);
+                const {gameChannel, other} = await loadFixture(enableGameChannelFixture);
+                await expect(gameChannel.write.withdrawHouseStake([BigInt(1e18)], {account: other})).to.be.rejectedWith(
+                    REVERT_WITHOUT_REASON,
+                );
             });
 
             it("Should fail if below min house stake", async () => {
+                const {gameChannel, owner, server, other: user} = await loadFixture(enableGameChannelFixture);
                 await createGame(gameChannel, server, user, hash, hash, MAX_STAKE);
-                return expect(gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
-                );
+                await expect(
+                    gameChannel.write.withdrawHouseStake([INITIAL_HOUSE_STAKE], {account: owner}),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should fail if house profit not backed", async () => {
-                const profit = PROFIT.neg();
+                const {gameChannel, owner, server, other: user} = await loadFixture(enableGameChannelFixture);
+                const profit = -PROFIT;
                 await createProfitAsync(gameChannel, user, server, profit);
 
-                return expect(gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
-                );
+                await expect(
+                    gameChannel.write.withdrawHouseStake([INITIAL_HOUSE_STAKE], {account: owner}),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should succeed", async () => {
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
                 const prevBalance = await getBalance(owner);
-                await gameChannel.withdrawHouseStake(INITIAL_HOUSE_STAKE, {from: owner});
+                await gameChannel.write.withdrawHouseStake([INITIAL_HOUSE_STAKE], {account: owner});
                 const afterBalance = await getBalance(owner);
 
-                expect(afterBalance).to.be.gt.BN(prevBalance.add(INITIAL_HOUSE_STAKE).sub(new BN((1e17).toString()))); // gas price
+                expect(afterBalance > prevBalance + INITIAL_HOUSE_STAKE - BigInt(1e17)).to.be.true; // gas price
 
-                const newHouseStake = await gameChannel.houseStake.call();
-                expect(newHouseStake).to.eq.BN(0);
+                const newHouseStake = await gameChannel.read.houseStake();
+                expect(newHouseStake).to.eq(0n);
             });
         });
 
-        describe("withdrawAll", async () => {
+        describe("withdrawAll", () => {
             it("Should fail if not owner", async () => {
-                await gameChannel.pause({from: owner});
-                await increaseTimeAsync(WITHDRAW_ALL_TIMEOUT);
-                return expect(gameChannel.withdrawAll({from: notOwner})).to.be.rejectedWith(TRANSACTION_ERROR);
+                const {gameChannel, owner, other} = await loadFixture(enableGameChannelFixture);
+                await gameChannel.write.pause({account: owner});
+                await time.increase(WITHDRAW_ALL_TIMEOUT);
+                await expect(gameChannel.write.withdrawAll({account: other})).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should fail if not paused long enough", async () => {
-                await gameChannel.pause({from: owner});
-                await increaseTimeAsync(WITHDRAW_ALL_TIMEOUT - 10);
-                return expect(gameChannel.withdrawAll({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                await gameChannel.write.pause({account: owner});
+                await time.increase(WITHDRAW_ALL_TIMEOUT - 10);
+                await expect(gameChannel.write.withdrawAll({account: owner})).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should succeed", async () => {
-                await gameChannel.pause({from: owner});
-                await increaseTimeAsync(WITHDRAW_ALL_TIMEOUT);
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                await gameChannel.write.pause({account: owner});
+                await time.increase(WITHDRAW_ALL_TIMEOUT);
 
                 const prevBalanceOwner = await getBalance(owner);
-                const prevStakeContract = await gameChannel.houseStake.call();
+                const prevStakeContract = await gameChannel.read.houseStake();
 
-                const res = await gameChannel.withdrawAll({from: owner});
+                const res = await gameChannel.write.withdrawAll({account: owner});
 
                 const afterBalanceOwner = await getBalance(owner);
-                const transactionCost = await getTransactionCost(res.receipt);
+                const transactionCost = await getTransactionCost(res);
 
-                expect(afterBalanceOwner).to.eq.BN(prevBalanceOwner.add(prevStakeContract).sub(transactionCost));
+                expect(afterBalanceOwner).to.eq(prevBalanceOwner + prevStakeContract - transactionCost);
 
-                const newHouseStake = await gameChannel.houseStake.call();
-                expect(newHouseStake).to.eq.BN(0);
+                const newHouseStake = await gameChannel.read.houseStake();
+                expect(newHouseStake).to.eq(0n);
 
-                const newHouseProfit = await gameChannel.houseProfit.call();
-                expect(newHouseProfit).to.eq.BN(0);
+                const newHouseProfit = await gameChannel.read.houseProfit();
+                expect(newHouseProfit).to.eq(0n);
             });
         });
 
-        describe("setHouseAddress", async () => {
+        describe("setHouseAddress", () => {
             it("Should fail if not owner", async () => {
-                return expect(gameChannel.setHouseAddress(notOwner, {from: notOwner})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
+                const {gameChannel, other, other2} = await loadFixture(enableGameChannelFixture);
+                await expect(gameChannel.write.setHouseAddress([other2], {account: other})).to.be.rejectedWith(
+                    REVERT_WITHOUT_REASON,
                 );
             });
 
             it("Should succeed", async () => {
-                await gameChannel.setHouseAddress(notOwner, {from: owner});
-                const newHouseAddress = await gameChannel.houseAddress.call();
-                expect(newHouseAddress).to.equal(notOwner);
+                const {gameChannel, other, owner} = await loadFixture(enableGameChannelFixture);
+                await gameChannel.write.setHouseAddress([other], {account: owner});
+                const newHouseAddress = await gameChannel.read.houseAddress();
+                expect(newHouseAddress).to.equal(other);
             });
         });
 
         describe("setStakeRequirements", () => {
-            const newMinStake = new BN((1e16).toString());
-            const newMaxStake = new BN((1e19).toString());
+            const newMinStake = BigInt(1e16);
+            const newMaxStake = BigInt(1e19);
 
             it("Should fail if not owner", async () => {
-                return expect(
-                    gameChannel.setStakeRequirements(newMinStake, newMaxStake, {from: notOwner})
-                ).to.be.rejectedWith(TRANSACTION_ERROR);
+                const {gameChannel, other} = await loadFixture(enableGameChannelFixture);
+                await expect(
+                    gameChannel.write.setStakeRequirements([newMinStake, newMaxStake], {account: other}),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should succeed", async () => {
-                await gameChannel.setStakeRequirements(newMinStake, newMaxStake, {from: owner});
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                await gameChannel.write.setStakeRequirements([newMinStake, newMaxStake], {account: owner});
 
-                const minStake = await gameChannel.minStake.call();
-                const maxStake = await gameChannel.maxStake.call();
+                const minStake = await gameChannel.read.minStake();
+                const maxStake = await gameChannel.read.maxStake();
 
-                expect(minStake).to.eq.BN(newMinStake);
-                expect(maxStake).to.eq.BN(newMaxStake);
+                expect(minStake).to.eq(newMinStake);
+                expect(maxStake).to.eq(newMaxStake);
             });
         });
 
         describe("addHouseStake", () => {
-            const houseStakeToAdd = new BN("100e18");
+            const houseStakeToAdd = 100n * 10n ** 18n;
             it("Should fail if not owner", async () => {
-                return expect(gameChannel.addHouseStake({from: notOwner, value: houseStakeToAdd})).to.be.rejectedWith(
-                    TRANSACTION_ERROR
-                );
+                const {gameChannel, other} = await loadFixture(enableGameChannelFixture);
+                await expect(
+                    gameChannel.write.addHouseStake({account: other, value: houseStakeToAdd}),
+                ).to.be.rejectedWith(REVERT_WITHOUT_REASON);
             });
 
             it("Should succeed", async () => {
-                const prevHouseStake = await gameChannel.houseStake.call();
-                await gameChannel.addHouseStake({from: owner, value: houseStakeToAdd});
-                const newHouseStake = await gameChannel.houseStake.call();
+                const {gameChannel, owner} = await loadFixture(enableGameChannelFixture);
+                const prevHouseStake = await gameChannel.read.houseStake();
+                await gameChannel.write.addHouseStake({account: owner, value: houseStakeToAdd});
+                const newHouseStake = await gameChannel.read.houseStake();
 
-                expect(newHouseStake).to.eq.BN(prevHouseStake.add(houseStakeToAdd));
+                expect(newHouseStake).to.eq(prevHouseStake + houseStakeToAdd);
             });
         });
     });

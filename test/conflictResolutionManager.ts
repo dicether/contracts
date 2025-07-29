@@ -1,75 +1,81 @@
-const GameChannel = artifacts.require("./GameChannel.sol");
-import * as chai from "chai";
+import {loadFixture, reset, time} from "@nomicfoundation/hardhat-network-helpers";
+import {expect} from "chai";
+import hre from "hardhat";
+import {getAddress} from "viem";
 
-import BlockchainLifecycle from "./utils/BlockchainLifecycle";
-import {configureChai, increaseTimeAsync, TRANSACTION_ERROR} from "./utils/util";
-
-configureChai();
-const expect = chai.expect;
+import {gameChannelFixture} from "./gameChannelFixture";
 
 const ConflictResUpdateMinTimeout = 3 * 24 * 60 * 60;
 const ConflictResUpdateMaxTimeout = 6 * 24 * 60 * 60;
 
-contract("ConflictResolutionManager", (accounts) => {
-    const owner = accounts[0];
-    const notOwner = accounts[1];
-    const newConflictResolutionContractAddress1 = accounts[4];
-    const newConflictResolutionContractAddress2 = accounts[5];
-
-    const blockchainLifecycle = new BlockchainLifecycle(web3.currentProvider);
-
-    let gameChannel: any;
-
-    before(async () => {
-        gameChannel = await GameChannel.deployed();
+describe("ConflictResolutionManager", () => {
+    before(async function () {
+        await reset();
     });
 
-    beforeEach(async () => {
-        await blockchainLifecycle.takeSnapshotAsync();
-    });
-
-    afterEach(async () => {
-        await blockchainLifecycle.revertSnapShotAsync();
-    });
+    async function conflicResolutionFicture() {
+        const res = await gameChannelFixture();
+        const accounts = await hre.viem.getWalletClients();
+        const notOwner = accounts[3].account.address;
+        const newConflictResolutionContractAddress = getAddress(accounts[4].account.address);
+        return {...res, notOwner, newConflictResolutionContractAddress};
+    }
 
     describe("update ConflictResolution", () => {
         it("Should fail if non owner updates conflict resolution contract", async () => {
-            return expect(
-                gameChannel.updateConflictResolution(newConflictResolutionContractAddress1, {from: notOwner})
-            ).to.be.rejectedWith(TRANSACTION_ERROR);
+            const {gameChannel, newConflictResolutionContractAddress, notOwner} =
+                await loadFixture(conflicResolutionFicture);
+            await expect(
+                gameChannel.write.updateConflictResolution([newConflictResolutionContractAddress], {account: notOwner}),
+            ).to.be.rejectedWith("without a reason");
         });
 
         it("New conflict resolution address should be settable by owner", async () => {
-            await gameChannel.updateConflictResolution(newConflictResolutionContractAddress1, {from: owner});
-            expect(await gameChannel.newConflictRes.call()).to.equal(newConflictResolutionContractAddress1);
+            const {gameChannel, newConflictResolutionContractAddress, owner} =
+                await loadFixture(conflicResolutionFicture);
+            await gameChannel.write.updateConflictResolution([newConflictResolutionContractAddress], {account: owner});
+            expect(await gameChannel.read.newConflictRes()).to.equal(newConflictResolutionContractAddress);
         });
     });
 
     describe("activate ConflictResolution", () => {
         it("Should fail if owner activates before min timeout", async () => {
-            await gameChannel.updateConflictResolution(newConflictResolutionContractAddress1, {from: owner});
-            return expect(gameChannel.activateConflictResolution({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
+            const {gameChannel, newConflictResolutionContractAddress, owner} =
+                await loadFixture(conflicResolutionFicture);
+            await gameChannel.write.updateConflictResolution([newConflictResolutionContractAddress], {account: owner});
+            await expect(gameChannel.write.activateConflictResolution({account: owner})).to.be.rejectedWith(
+                "without a reason",
+            );
         });
 
         it("Should fail if non owner activates after min timeout", async () => {
-            await gameChannel.updateConflictResolution(newConflictResolutionContractAddress1, {from: owner});
-            await increaseTimeAsync(ConflictResUpdateMinTimeout);
-            return expect(gameChannel.activateConflictResolution({from: notOwner})).to.be.rejectedWith(
-                TRANSACTION_ERROR
+            const {gameChannel, newConflictResolutionContractAddress, owner, notOwner} =
+                await loadFixture(conflicResolutionFicture);
+            await gameChannel.write.updateConflictResolution([newConflictResolutionContractAddress], {account: owner});
+            await time.increase(ConflictResUpdateMinTimeout);
+
+            await expect(gameChannel.write.activateConflictResolution({account: notOwner})).to.be.rejectedWith(
+                "without a reason",
             );
         });
 
         it("Should fail if owner activates after max timeout", async () => {
-            await gameChannel.updateConflictResolution(newConflictResolutionContractAddress1, {from: owner});
-            await increaseTimeAsync(ConflictResUpdateMaxTimeout + 1);
-            return expect(gameChannel.activateConflictResolution({from: owner})).to.be.rejectedWith(TRANSACTION_ERROR);
+            const {gameChannel, newConflictResolutionContractAddress, owner} =
+                await loadFixture(conflicResolutionFicture);
+            await gameChannel.write.updateConflictResolution([newConflictResolutionContractAddress], {account: owner});
+            await time.increase(ConflictResUpdateMaxTimeout + 1);
+            await expect(gameChannel.write.activateConflictResolution({account: owner})).to.be.rejectedWith(
+                "without a reason",
+            );
         });
 
         it("New conflict resolution address can be activated by owner", async () => {
-            await gameChannel.updateConflictResolution(newConflictResolutionContractAddress2, {from: owner});
-            await increaseTimeAsync(ConflictResUpdateMinTimeout + 1);
-            await gameChannel.activateConflictResolution({from: owner});
-            expect(await gameChannel.conflictRes.call()).to.equal(newConflictResolutionContractAddress2);
+            const {gameChannel, newConflictResolutionContractAddress, owner} =
+                await loadFixture(conflicResolutionFicture);
+            await gameChannel.write.updateConflictResolution([newConflictResolutionContractAddress], {account: owner});
+            await time.increase(ConflictResUpdateMinTimeout + 1);
+            await gameChannel.write.activateConflictResolution({account: owner});
+            expect(await gameChannel.read.conflictRes()).to.equal(newConflictResolutionContractAddress);
         });
     });
 });

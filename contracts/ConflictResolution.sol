@@ -215,6 +215,8 @@ contract ConflictResolution is ConflictResolutionInterface, Games {
             profit = Games.maxUserProfit(_gameType, _betNum, _betValue);
         }
 
+        //@todo: do not allow balance > MAX_BALANCE!
+
         // penalize server as it didn't end game
         profit = profit.add(NOT_ENDED_FINE);
 

@@ -1,54 +1,56 @@
 import {maxBet} from "@dicether/state-channel";
-import BN from "bn.js";
-import * as chai from "chai";
+import {expect} from "chai";
+import hre from "hardhat";
+import {ContractTypesMap} from "hardhat/types";
+import {Address, keccak256} from "viem";
 
-import {MIN_BANKROLL} from "../utils/config";
-
-const expect = chai.expect;
+import {enableGameChannelFixture, GameChannelFixtureReturn} from "../gameChannelFixture";
+import {MAX_STAKE, MIN_BANKROLL} from "../utils/config";
+import {createGame} from "../utils/util";
 
 export const ZERO_SEED = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-export const phash1 = web3.utils.sha3("0x0000000000000000000000000000000000000000000000000000000000000001") as string;
-export const phash2 = web3.utils.sha3(phash1) as string;
-export const phash3 = web3.utils.sha3(phash2) as string;
-export const shash1 = web3.utils.sha3("0x0000000000000000000000000000000000000000000000000000000000000002") as string;
-export const shash2 = web3.utils.sha3(shash1) as string;
-export const shash3 = web3.utils.sha3(shash2) as string;
+export const phash1 = keccak256("0x0000000000000000000000000000000000000000000000000000000000000001");
+export const phash2 = keccak256(phash1);
+export const phash3 = keccak256(phash2);
+export const shash1 = keccak256("0x0000000000000000000000000000000000000000000000000000000000000002");
+export const shash2 = keccak256(shash1);
+export const shash3 = keccak256(shash2);
 
-export const BET_VALUE = new BN(maxBet(1, 1, MIN_BANKROLL.div(new BN(1e9)).toNumber(), 1)).mul(new BN(1e9));
+export const BET_VALUE = BigInt(maxBet(1, 1, Number(MIN_BANKROLL / BigInt(1e9)), 1)) * BigInt(1e9);
 
 export async function checkGameStatusAsync(
-    gameChannel: any,
-    gameId: number,
+    gameChannel: ContractTypesMap["GameChannel"],
+    gameId: bigint,
     statusRef: number,
-    _reasonEndedRef: number
+    _reasonEndedRef: number,
 ): Promise<void> {
     // check game session state
-    const game = await gameChannel.gameIdGame.call(gameId);
-    const status = game[0].toNumber();
+    const game = await gameChannel.read.gameIdGame([gameId]);
+    const status = game[0];
 
     expect(status).to.equal(statusRef);
 }
 
 export async function checkGameStateAsync(
-    gameChannel: any,
-    gameId: number,
+    gameChannel: ContractTypesMap["GameChannel"],
+    gameId: bigint,
     statusRef: number,
     reasonEndedRef: number,
     gameTypeRef: number,
     roundIdRef: number,
-    numRef: number,
-    betValueRef: BN,
-    balanceRef: BN,
+    numRef: bigint,
+    betValueRef: bigint,
+    balanceRef: bigint,
     userSeedRef: string,
-    serverSeedRef: string
+    serverSeedRef: string,
 ): Promise<void> {
-    const game = await gameChannel.gameIdGame.call(gameId);
+    const game = await gameChannel.read.gameIdGame([gameId]);
 
-    const status = game[0].toNumber();
-    const gameType = game[2].toNumber();
-    const roundId = game[3].toNumber();
-    const betNum = game[4].toNumber();
+    const status = game[0];
+    const gameType = game[2];
+    const roundId = game[3];
+    const betNum = game[4];
     const betValue = game[5];
     const userSeed = game[7];
     const serverSeed = game[8];
@@ -57,12 +59,36 @@ export async function checkGameStateAsync(
     expect(gameType).to.equal(gameTypeRef);
     expect(roundId).to.equal(roundIdRef);
     expect(betNum).to.equal(numRef);
-    expect(betValue).to.eq.BN(betValueRef);
+    expect(betValue).to.equal(betValueRef);
     expect(userSeed).to.equal(userSeedRef);
     expect(serverSeed).to.equal(serverSeedRef);
 }
 
-export async function checkActiveGamesAsync(gameChannel: any, activeGamesRef: number): Promise<void> {
-    const activeGames = await gameChannel.activeGames.call();
-    expect(activeGames).to.eq.BN(activeGamesRef);
+export async function checkActiveGamesAsync(
+    gameChannel: ContractTypesMap["GameChannel"],
+    activeGamesRef: bigint,
+): Promise<void> {
+    const activeGames = await gameChannel.read.activeGames();
+    expect(activeGames).to.equal(activeGamesRef);
 }
+
+export type CreateGameFixtureReturn = GameChannelFixtureReturn & {
+    other: Address;
+    user1: Address;
+    user2: Address;
+    stake: bigint;
+    gameId: bigint;
+};
+
+export const createGameFixture = async function (): Promise<CreateGameFixtureReturn> {
+    const accounts = await hre.viem.getWalletClients();
+
+    const user1 = accounts[5].account.address;
+    const user2 = accounts[6].account.address;
+
+    const {gameChannel, server, ...rest} = await enableGameChannelFixture();
+
+    await createGame(gameChannel, server, user1, shash3, phash3, MAX_STAKE);
+
+    return {gameChannel, server, user1, user2, stake: MAX_STAKE, gameId: 1n, ...rest};
+};

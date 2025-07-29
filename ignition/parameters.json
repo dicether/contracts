@@ -1,0 +1,9 @@
+{
+    "GameChannel": {
+        "minStake": "10000000000000000n",
+        "maxStake": "200000000000000000000n"
+    },
+    "EnableGameChannel": {
+        "houseStake": "15000000000000000000n"
+    }
+}

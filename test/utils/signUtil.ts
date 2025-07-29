@@ -1,78 +1,69 @@
 import {createTypedData} from "@dicether/state-channel";
-import BN from "bn.js";
-import * as ethSigUtil from "eth-sig-util";
-import * as ethUtil from "ethereumjs-util";
-import {promisify} from "util";
-import {HttpProvider} from "web3-core";
-
-const publicPrivateKeyMap: {[id: string]: string} = {
-    "0x26006236eaB6409D9FDECb16ed841033d6B4A6bC": "0x1ce6a4cc4c9941a4781349f988e129accdc35a55bb3d5b1a7b342bc2171db484",
-    "0xA8D5f39F3ccD4795B0E38FeAcb4f2EE22486CA44": "0xc7ab5af90a9373bdd03d5708cfba1a4117dbd204237b90d55e9842c71e631d97",
-    "0x3596ddf5181c9F6Aa1bcE87D967Bf227DDE70ddf": "0xa4471ac58369b9df99f5d9e4ff4170e5a068db13ee23a0c5af8731245fc174c2",
-    "0x79182b3fa375cE9c8A4C3c611594aaf38A508477": "0xdcaf0add96529d56e5411e4108f17fdb30dfe64bb1575229c8dfa325ceb6c045",
-    "0x3C9a6014424cBdeea0D75CBaa752FC0A1fEfe327": "0x2c88b2e35ce934d91a9fe78be093471eb66ee78a9fe7499a247c465c80446879",
-};
+import hre from "hardhat";
+import {HardhatNetworkHDAccountsConfig} from "hardhat/types/config";
+import {Address, Hash, Hex, keccak256, encodePacked} from "viem";
+import {mnemonicToAccount} from "viem/accounts";
 
 export async function signData(
     roundId: number,
     gameType: number,
     num: number,
-    value: BN,
-    balance: BN,
-    serverHash: string,
-    userHash: string,
+    value: bigint,
+    balance: bigint,
+    serverHash: Hex,
+    userHash: Hex,
     gameId: number,
-    contractAddress: string,
-    account: string
-): Promise<string> {
+    contractAddress: Address,
+    account: Address,
+): Promise<Hex> {
     const bet = {
         roundId,
         gameType,
         num,
-        value: value.div(new BN(1e9)).toNumber(), // bet data is stored in gwei
-        balance: balance.div(new BN(1e9)).toNumber(), // bet data is stored in gwei
+        value: Number(value / BigInt(1e9)), // bet data is stored in gwei
+        balance: Number(balance / BigInt(1e9)), // bet data is stored in gwei
         serverHash,
         userHash,
         gameId,
     };
 
-    const typedData = createTypedData(bet, 123456789, contractAddress, 2);
-    const send = promisify((web3.currentProvider as HttpProvider).send);
-    const res: any = await send({
-        jsonrpc: "2.0",
-        method: "eth_signTypedData",
-        params: [account, typedData],
-        id: 42,
-    });
+    const walletClient = await hre.viem.getWalletClient(account);
+    const chainId = await walletClient.getChainId();
 
-    return res.result;
+    const typedData = createTypedData(bet, chainId, contractAddress, 2);
+    const signature = await walletClient.signTypedData({account, ...typedData});
+
+    return signature;
 }
 
-export function signStartData(
-    contractAddress: string,
-    user: string,
-    lastGameId: number,
-    createBefore: number,
-    serverEndHash: string,
-    serverAccount: string
-): string {
-    const hash = ethUtil.toBuffer(
-        web3.utils.soliditySha3(
-            {t: "uint", v: 123456789},
-            {t: "address", v: contractAddress},
-            {t: "address", v: user},
-            {t: "uint", v: lastGameId},
-            {t: "uint", v: createBefore},
-            {t: "bytes32", v: serverEndHash}
-        )
+export async function signStartData(
+    contractAddress: Address,
+    user: Address,
+    lastGameId: bigint,
+    createBefore: bigint,
+    serverEndHash: Hash,
+    serverAccount: Hash,
+): Promise<Hex> {
+    const walletClient = await hre.viem.getWalletClient(serverAccount);
+    const chainId = await walletClient.getChainId();
+    const hash = keccak256(
+        encodePacked(
+            ["uint", "address", "address", "uint", "uint", "bytes32"],
+            [BigInt(chainId), contractAddress, user, lastGameId, createBefore, serverEndHash],
+        ),
     );
 
-    if (!(serverAccount in publicPrivateKeyMap)) {
-        throw Error('Invalid account! You need to run ganache with --mnemonic "test"');
+    const accounts = hre.config.networks.hardhat.accounts as HardhatNetworkHDAccountsConfig;
+    if (accounts.mnemonic === undefined) {
+        throw new Error("Hardhat network accounts are not configured with a mnemonic");
     }
 
-    const privKey = publicPrivateKeyMap[serverAccount];
+    for (let i = 0; i < 10; i++) {
+        const account = mnemonicToAccount(accounts.mnemonic, {addressIndex: i});
+        if (account.address === serverAccount) {
+            return account.sign({hash});
+        }
+    }
 
-    const sig = ethUtil.ecsign(hash, ethUtil.toBuffer(privKey));
-    return ethSigUtil.concatSig(new BN(sig.v).toArrayLike(Buffer), sig.r, sig.s);
+    throw new Error(`Server account ${serverAccount} not found in mnemonic accounts`);
 }
