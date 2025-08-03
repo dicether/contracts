@@ -14,7 +14,7 @@ contract DiceHigher is GameInterface, Utilities {
     uint private constant DICE_RANGE = 100;
 
     modifier onlyValidNum(uint _betNum) {
-        require(_betNum >= 0 && _betNum < DICE_RANGE - 1, "Invalid num");
+        require(_betNum > 0 && _betNum < DICE_RANGE - 1, "Invalid num");
         _;
     }
 

@@ -182,8 +182,7 @@ describe("serverEndConflict", () => {
     });
 
     it("Should fail with too high number game type 1", async () => {
-        //@ todo: We get negativ profit for user => Do not allow bet 99
-        return testHelper("Arithmetic operation overflowed", (defaultData, _) => ({
+        return testHelper("Invalid num", (defaultData, _) => ({
             ...defaultData,
             gameType: 1,
             num: 99n,
@@ -191,8 +190,7 @@ describe("serverEndConflict", () => {
     });
 
     it("Should fail with too too low number game type 2", async () => {
-        //@ todo: We get negativ profit for user => Do not allow bet 0
-        return testHelper("Arithmetic operation overflowed", (defaultData, _) => ({
+        return testHelper("Invalid num", (defaultData, _) => ({
             ...defaultData,
             gameType: 2,
             num: 0n,
