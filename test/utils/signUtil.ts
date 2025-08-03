@@ -31,7 +31,15 @@ export async function signData(
     const chainId = await walletClient.getChainId();
 
     const typedData = createTypedData(bet, chainId, contractAddress, 2);
-    const signature = await walletClient.signTypedData({account, ...typedData});
+
+    const signature = await walletClient.signTypedData({
+        account,
+        types: typedData.types,
+        primaryType: "Bet",
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        domain: typedData.domain as any,
+        message: typedData.message,
+    });
 
     return signature;
 }
