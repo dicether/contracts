@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/node:22.16.0
+      - image: cimg/node:22.16.0
 
     working_directory: ~/repo
 
@@ -32,7 +32,7 @@ jobs:
   test:
     docker:
       # specify the version you desire here
-      - image: circleci/node:22.16.0
+      - image: cimg/node:22.16.0
 
     working_directory: ~/repo
 
@@ -44,7 +44,7 @@ jobs:
   lint-tests:
     docker:
       # specify the version you desire here
-      - image: circleci/node:22.16.0
+      - image: cimg/node:22.16.0
 
     working_directory: ~/repo
 
