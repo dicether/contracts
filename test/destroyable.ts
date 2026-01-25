@@ -1,4 +1,3 @@
-//const GameChannel = artifacts.require("./gameChannel.write.sol");
 import {time, loadFixture, reset} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import {expect} from "chai";
 
