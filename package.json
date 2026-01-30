@@ -33,7 +33,7 @@
     "@dicether/eslint-config": "^2.1.0",
     "@dicether/prettier-config": "^1.0.0",
     "@dicether/state-channel": "^2.0.0",
-    "@nomicfoundation/hardhat-toolbox-viem": "^4.1.0",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.2",
     "eslint": "^9.32.0",
     "husky": "^9.1.7",
     "left-pad": "^1.1.3",
