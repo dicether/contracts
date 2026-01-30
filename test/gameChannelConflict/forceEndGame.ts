@@ -214,10 +214,10 @@ describe("GameChannelConflict-ForceEnd", () => {
                     calcNewBalance(
                         gameType,
                         Number(num),
-                        fromWeiToGwei(value.toString()),
+                        fromWeiToGwei(value),
                         serverSeed,
                         userSeed,
-                        fromWeiToGwei(balance.toString()),
+                        fromWeiToGwei(balance),
                     ),
                 ),
             );
@@ -424,9 +424,7 @@ describe("GameChannelConflict-ForceEnd", () => {
                 // check new balances (profit, stake, contract balance)
                 const newBalance = maxBigInt(
                     balance +
-                        BigInt(
-                            fromGweiToWei(calcMaxUserProfit(gameType, Number(num), fromWeiToGwei(value.toString()))),
-                        ) +
+                        BigInt(fromGweiToWei(calcMaxUserProfit(gameType, Number(num), fromWeiToGwei(value)))) +
                         NOT_ENDED_FINE,
                     -stake,
                 );
